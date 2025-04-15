@@ -260,3 +260,5 @@ class PlanningGraph {
 		}
 	}
 }
+
+export { PlanningGraph };

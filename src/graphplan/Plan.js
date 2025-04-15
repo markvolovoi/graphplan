@@ -18,3 +18,5 @@ class Plan {
 		);
 	}
 }
+
+export { Plan };

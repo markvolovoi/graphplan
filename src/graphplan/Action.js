@@ -50,3 +50,5 @@ class Action {
 		return `Action ${this.name} (${this.params})`;
 	}
 }
+
+export { Effect, Action };
