@@ -12,3 +12,5 @@ class Proposition {
 		return `Proposition ${this.name} (${this.params})`;
 	}
 }
+
+export { Proposition };

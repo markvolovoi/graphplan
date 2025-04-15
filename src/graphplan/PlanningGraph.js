@@ -86,3 +86,5 @@ class PlanningGraph {
 
 	build() {}
 }
+
+export { PlanningGraph };
