@@ -1,6 +1,7 @@
 import { Show } from "solid-js";
 
 function ProblemVis(props) {
+
 	return (
 		<div>
 			<Show when={props.name === "null"}>

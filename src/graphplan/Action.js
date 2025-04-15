@@ -47,8 +47,8 @@ class Action {
 	}
 
 	toString() {
-		return `Action ${this.name} (${this.params})`;
+		return `${this.name} (${this.params == null ? "" : this.params})`;
 	}
 }
 
-export { Effect, Action };
+export { Action };

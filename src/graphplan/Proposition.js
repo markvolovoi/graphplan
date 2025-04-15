@@ -14,7 +14,7 @@ class Proposition {
 	}
 
 	toString() {
-		return `Proposition ${this.name} (${this.params})`;
+		return `${this.truth_value ? "" : "¬"}${this.name} (${this.params == null ? "" : this.params})`;
 	}
 }
 
