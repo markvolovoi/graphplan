@@ -35,15 +35,21 @@ class Action {
 
 	//take in a list of propositions and return a list of new propositions after action is done
 	apply(old_propositions) {
-		for (proposition in old_propositions) {
 			for (effect in this.effects) {
-				if (proposition.negation(effect)) {
-					let index = old_propositions.indexOf(propostition);
-					old_propositions.splice(index, 1);
+				let added_prop = false;
+				for (proposition in old_propositions) {
+					if (proposition.negation(effect)) {
+						let index = old_propositions.indexOf(propostition);
+						old_propositions.splice(index, 1);
+						old_propositions.append(effect);
+						added_prop = true;
+						continue;
+					}
+				}
+				if (!added_prop) {
 					old_propositions.append(effect);
 				}
 			}
-		}
 	}
 
 	toString() {
