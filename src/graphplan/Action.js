@@ -53,7 +53,7 @@ class Action {
 	}
 
 	toString() {
-		return `${this.name} (${this.params == null ? "" : this.params})`;
+		return `${this.name} (${this.params == null ? "" : Object.entries(this.params).map((el) => ` ${el[0]}=${el[1]}`)})`;
 	}
 }
 
