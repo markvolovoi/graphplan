@@ -71,12 +71,12 @@ export const planningGraphString = createMemo(() => {
 
 	for (let i = 0; i < graph.propLevels.length; i++) {
 		const propLevel = graph.propLevels[i];
-		result += `<span class="proposition-level">Proposition Level ${i}:</span>\n`;
+		result += `Proposition Level ${i}:\n`;
 		result +=
 			propLevel.propositions.map((p) => p.toString()).join("\n") + "\n\n";
 
 		if (propLevel.mutexRelations.size > 0) {
-			result += '<span class="mutex-relation">Mutex Relations:</span>\n';
+			result += "Mutex Relations:\n";
 			for (const [prop, mutexProps] of propLevel.mutexRelations.entries()) {
 				if (mutexProps.length > 0) {
 					result += `${prop.toString()} is mutex with ${mutexProps.map((p) => p.toString()).join(", ")}\n`;
@@ -87,12 +87,12 @@ export const planningGraphString = createMemo(() => {
 
 		if (i < graph.actionLevels.length) {
 			const actionLevel = graph.actionLevels[i];
-			result += `<span class="action-level">Action Level ${i}:</span>\n`;
+			result += `Action Level ${i}:\n`;
 			result +=
 				actionLevel.actions.map((a) => a.toString()).join("\n") + "\n\n";
 
 			if (actionLevel.mutexRelations.size > 0) {
-				result += '<span class="mutex-relation">Mutex Relations:</span>\n';
+				result += "Mutex Relations:\n";
 				for (const [
 					action,
 					mutexActions,
@@ -121,7 +121,7 @@ export const planString = createMemo(() => {
 
 	for (const timeStep of timeSteps) {
 		const actions = currentPlan.actionsByTimeStep[timeStep];
-		result += `<div class="plan-step">Time ${timeStep}: [${actions.map((a) => a.toString()).join(", ")}]</div>\n`;
+		result += `Time ${timeStep}: [${actions.map((a) => a.toString()).join(", ")}]\n`;
 	}
 
 	if (timeSteps.length === 0) {

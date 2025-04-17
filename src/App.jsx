@@ -1,5 +1,6 @@
 import { createSignal, For } from "solid-js";
 import { ProblemVis } from "./components/ProblemVis.jsx";
+import { GraphView } from "./components/GraphView.jsx";
 import "./App.css";
 import { problems } from "./problems/problems.js";
 
@@ -12,10 +13,13 @@ import {
 	searchForPlans,
 	planningGraphString,
 	planString,
-	selectedProblem,
+	planningGraph,
+	plan,
 } from "./PlanningState.js";
 
 function App() {
+	const [showGraph, setShowGraph] = createSignal(true);
+	const [showPlanGraph, setShowPlanGraph] = createSignal(true);
 	return (
 		<div class="flex justify-center w-full max-w-full py-12 mb-24">
 			<div class="w-1/2 space-y-6">
@@ -34,7 +38,7 @@ function App() {
 					"Build Planning Graph." Then, you can see the final possible plans
 					using "Search for Plans."
 				</p>
-				<form class="w-ful">
+				<form class="w-full">
 					<label
 						for="problemSelect"
 						class="block mb-2 text-sm font-medium text-gray-900"
@@ -56,7 +60,7 @@ function App() {
 					</select>
 				</form>
 
-				<div class="w-full h-48 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-x-clip overflow-y-scroll">
+				<div class="w-full h-72 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-x-clip overflow-y-scroll">
 					<ProblemVis name={problemName()} problem={problems[problemName()]} />
 				</div>
 
@@ -67,14 +71,26 @@ function App() {
 					Build Planning Graph
 				</button>
 
-				<div class="w-full h-96 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-y-auto">
-					<pre
-						innerHTML={
-							isGraphBuilt()
+				<div>
+					<label class="select-none">
+						<input
+							type="checkbox"
+							checked={showGraph()}
+							onInput={(e) => setShowGraph(e.currentTarget.checked)}
+						/>
+						<span class="ml-2">View Planning Graph as Graph</span>
+					</label>
+				</div>
+				<div class="w-full h-96 relative">
+					{isGraphBuilt() && showGraph() ? (
+						<GraphView graph={planningGraph()} />
+					) : (
+						<pre class="p-2 overflow-auto h-full">
+							{isGraphBuilt()
 								? planningGraphString()
-								: "Planning graph will appear here."
-						}
-					></pre>
+								: "Planning graph will appear here."}
+						</pre>
+					)}
 				</div>
 
 				<button
@@ -84,12 +100,24 @@ function App() {
 					Search For Plans
 				</button>
 
-				<div class="w-full h-96 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-y-auto">
-					<pre
-						innerHTML={
-							isPlanGenerated() ? planString() : "Plan will appear here."
-						}
-					></pre>
+				<div>
+					<label class="select-none">
+						<input
+							type="checkbox"
+							checked={showPlanGraph()}
+							onInput={(e) => setShowPlanGraph(e.currentTarget.checked)}
+						/>
+						<span class="ml-2">View Plan as Graph</span>
+					</label>
+				</div>
+				<div class="w-full h-96 relative">
+					{isPlanGenerated() && showPlanGraph() ? (
+						<GraphView plan={plan()} />
+					) : (
+						<pre class="p-2 overflow-auto h-full">
+							{isPlanGenerated() ? planString() : "Plan will appear here."}
+						</pre>
+					)}
 				</div>
 			</div>
 

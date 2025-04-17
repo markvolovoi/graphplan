@@ -34,12 +34,23 @@ function PropVis(props) {
 				onclick={() => setOpened(!opened())}
 			>
 				<span class="font-bold block">
-					{props.prop.name} ({props.prop.truth_value})
+					{props.prop.truth_value ? "" : "¬"}
+					{props.prop.name}
+					{props.prop.params["obj"] !== undefined
+						? ` (${props.prop.params["obj"]} @ ${props.prop.params["loc"]})`
+						: ""}
 				</span>
 				<Show when={opened()}>
 					<div class="block mt-2">
 						<p class="font-medium text-center">Parameters:</p>
-						{props.prop.params}
+						<For each={Object.entries(props.prop.params)}>
+							{(item, index) => (
+								<p>
+									{item[0]}: {item[1]}
+								</p>
+							)}
+						</For>
+						{/* {props.prop.params} */}
 						<br />
 					</div>
 				</Show>
