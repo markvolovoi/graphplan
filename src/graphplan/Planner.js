@@ -22,7 +22,7 @@ class GPSearch {
 	search() {
 		let level = 0;
 
-		while (true) {
+		while (level < 1000) {
 			// Extend the planning graph if needed
 			if (level >= this.pGraph.propLevels.length - 1) {
 				this.pGraph.extend();
@@ -55,6 +55,7 @@ class GPSearch {
 
 			level++;
 		}
+		return null; // search failed from sheer iterations
 	}
 
 	// Extract a plan that achieves the given goals at the given level

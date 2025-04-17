@@ -67,10 +67,7 @@ function App() {
 					Build Planning Graph
 				</button>
 
-				<div
-					onClick={searchForPlans}
-					class="w-full h-96 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-y-auto"
-				>
+				<div class="w-full h-96 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-y-auto">
 					<pre
 						innerHTML={
 							isGraphBuilt()
@@ -80,7 +77,10 @@ function App() {
 					></pre>
 				</div>
 
-				<button class="w-full p-3 bg-teal-600 border-none text-white rounded-md hover:bg-teal-700 active:bg-teal-800 cursor-pointer shadow-md hover:shadow-lg transition-all">
+				<button
+					onClick={searchForPlans}
+					class="w-full p-3 bg-teal-600 border-none text-white rounded-md hover:bg-teal-700 active:bg-teal-800 cursor-pointer shadow-md hover:shadow-lg transition-all"
+				>
 					Search For Plans
 				</button>
 

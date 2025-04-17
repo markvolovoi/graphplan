@@ -65,6 +65,8 @@ export const planningGraphString = createMemo(() => {
 	const graph = planningGraph();
 	if (!graph) return "No planning graph built yet.";
 
+	console.log("Running planningGraphString");
+
 	let result = "Planning Graph:\n\n";
 
 	for (let i = 0; i < graph.propLevels.length; i++) {
