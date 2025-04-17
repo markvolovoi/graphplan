@@ -84,15 +84,15 @@ const actionsForRocketProblem = [
 		[
 			new Proposition("in", { obj: cargoB, rocket: rocket }, true),
 			new Proposition("at", { obj: cargoB, loc: london }, false),
-		]
+		],
 	),
 
 	new Action(
 		"move-R1-London-Paris",
 		{ rocket: rocket, from: london, to: paris },
 		[
-			new Proposition("at", { obj: rocket, loc: london }),
-			new Proposition("has-fuel", { obj: rocket }),
+			new Proposition("at", { obj: rocket, loc: london }, true),
+			new Proposition("has-fuel", { obj: rocket }, true),
 		],
 		[
 			new Proposition("at", { obj: rocket, loc: paris }, true),
