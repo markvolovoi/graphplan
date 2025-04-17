@@ -1,7 +1,7 @@
 import { Show } from "solid-js";
+import { ActionVis } from "./ItemVis";
 
 function ProblemVis(props) {
-
 	return (
 		<div>
 			<Show when={props.name === "null"}>
@@ -20,7 +20,7 @@ function ProblemVis(props) {
 						<div>
 							<p class="text-center font-medium">Actions</p>
 							<For each={props.problem.actionList}>
-								{(value, index) => <div>{value.toString()}</div>}
+								{(value, index) => <ActionVis action={value}></ActionVis>}
 							</For>
 						</div>
 						<div>

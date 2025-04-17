@@ -1,264 +1,326 @@
+// REMOVE LATER: this is just a test script which works through
+// node test.js
+
+import { Action } from "./Action.js";
+
 class ActionLevel {
-	constructor(actions, mutexRelations) {
+	constructor(actions = [], mutexRelations = new Map()) {
 		this.actions = actions;
 		this.mutexRelations = mutexRelations;
 	}
 
-	constructor() {
-		this.actions = []
-		this.mutexRelations = new Map()
-	}
-
 	add(action) {
-		this.actions.append(action);
+		this.actions.push(action);
 	}
 
-	isMutex() {
+	// Find mutex relations between actions at this level
+	computeMutexRelations(prevLevel) {
+		// Clear previous mutex relations
+		this.mutexRelations = new Map();
+
+		// Check each pair of actions for mutex relations
 		for (let i = 0; i < this.actions.length; i++) {
-			for (let j = i + 1; l < this.actions.length; j++) {
-				let first_action = this.actions[i];
-				let second_action = this.actions[j];
+			for (let j = i + 1; j < this.actions.length; j++) {
+				const firstAction = this.actions[i];
+				const secondAction = this.actions[j];
 
-				let mutex = true;
-
-				//ways to be mutex: if preconditions are opposite
-				for (pre_1 in first_action.preconditions) {
-					for (pre_2 in second_action.preconditions) {
-						if (pre_1.negation(pre_2)) {
-							mutex = false;
-							break;
-						}
+				if (this.areActionsMutex(firstAction, secondAction, prevLevel)) {
+					// Add to mutex relations map
+					if (!this.mutexRelations.has(firstAction)) {
+						this.mutexRelations.set(firstAction, []);
 					}
-					if (!mutex) {
-						break;
+					if (!this.mutexRelations.has(secondAction)) {
+						this.mutexRelations.set(secondAction, []);
 					}
 
-					for (pre_2 in second_action.effects) {
-						if (pre_1.negation(pre_2)) {
-							mutex = false;
-							break;
-						}
-					}
-					if (!mutex) {
-						break;
-					}
+					this.mutexRelations.get(firstAction).push(secondAction);
+					this.mutexRelations.get(secondAction).push(firstAction);
 				}
-
-				//if effects are opposite
-				for (pre_1 in first_action.effects) {
-					for (pre_2 in second_action.effects) {
-						if (pre_1.negation(pre_2)) {
-							mutex = false;
-							break;
-						}
-					}
-					if (!mutex) {
-						break;
-					}
-
-					for (pre_2 in second_action.propositions) {
-						if (pre_1.negation(pre_2)) {
-							mutex = false;
-							break;
-						}
-					}
-					if (!mutex) {
-						break;
-					}
-				}
-
-				if (!mutex) {
-					continue;
-				}
-
-				//prob should be map but idk what you want
-				if (!this.mutexRelations.has(first_action)) {
-					this.mutexRelations.set(first_action, []);
-				}
-				if (!this.mutexRelations.has(second_action)) {
-					this.mutexRelations.set(second_action, []);
-				}
-				this.mutexRelations.set(first_action, [this.mutexRelations.get(first_action), second_action]);
-				this.mutexRelations.set(second_action, [this.mutexRelations.get(second_action), first_action]);
 			}
 		}
 	}
 
-	propagateMutex() {}
+	// Check if two actions are mutex
+	areActionsMutex(action1, action2, prevLevel) {
+		// Check Interference: one action deletes precondition or add-effect of other
+
+		// Check if action1 deletes any precondition of action2
+		for (const pre of action2.preconditions) {
+			for (const effect of action1.effects) {
+				if (effect.negation(pre)) {
+					return true;
+				}
+			}
+		}
+
+		// Check if action2 deletes any precondition of action1
+		for (const pre of action1.preconditions) {
+			for (const effect of action2.effects) {
+				if (effect.negation(pre)) {
+					return true;
+				}
+			}
+		}
+
+		// Check if actions have contradictory effects
+		for (const effect1 of action1.effects) {
+			for (const effect2 of action2.effects) {
+				if (effect1.negation(effect2)) {
+					return true;
+				}
+			}
+		}
+
+		// Check Competing Needs: if preconditions are mutex in previous level
+		for (const pre1 of action1.preconditions) {
+			for (const pre2 of action2.preconditions) {
+				// Check if these preconditions are mutex in previous level
+				if (prevLevel.areMutex(pre1, pre2)) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
 }
 
 class PropositionLevel {
-	constructor(propositions, mutexRelations) {
+	constructor(propositions = [], mutexRelations = new Map()) {
 		this.propositions = propositions;
 		this.mutexRelations = mutexRelations;
 	}
 
-	constructor() {
-		this.propositions = []
-		this.mutexRelations = new Map()
+	add(proposition) {
+		// Check if proposition already exists
+		const exists = this.propositions.some((p) => p.equals(proposition));
+		if (!exists) {
+			this.propositions.push(proposition);
+		}
 	}
 
-	add(p) {
-		this.propositions.append(p);
+	// Check if two propositions are mutex
+	areMutex(prop1, prop2) {
+		// Check if they are in mutex relations
+		if (this.mutexRelations.has(prop1)) {
+			return this.mutexRelations.get(prop1).some((p) => p.equals(prop2));
+		}
+		return false;
 	}
 
-	//pass in previous action level
-	isMutex(prevLevel) {
+	// Compute mutex relations based on previous action level
+	computeMutexRelations(prevActionLevel) {
+		// Clear previous mutex relations
+		this.mutexRelations = new Map();
+
+		// Check each pair of propositions
 		for (let i = 0; i < this.propositions.length; i++) {
-			for (let j = i + 1; l < this.propositions.length; j++) {
-				let first_prop = this.propositions[i];
-				let second_prop = this.propositions[j];
+			for (let j = i + 1; j < this.propositions.length; j++) {
+				const firstProp = this.propositions[i];
+				const secondProp = this.propositions[j];
 
-				//ways to be mutex: if are opposite
-				if (first_prop.negation(second_prop)) {
+				// Skip if propositions are negations of each other (automatically mutex)
+				if (firstProp.negation(secondProp)) {
+					this.addMutexRelation(firstProp, secondProp);
 					continue;
 				}
 
-				//if the only actions that lead to each prop are mutex, they are mutex
-				prev_actions = prevLevel.actions;
-				let actions_1 = [];
-				let actions_2 = [];
-				for (action in prev_actions) {
-					if (action.effects.includes(prop_1)) {
-						actions_1.append(action);
-					}
-					if (action.effects.includes(prop_2)) {
-						actions_2.append(action);
-					}
-				}
+				// Find actions that produce each proposition
+				const actionsForFirst = prevActionLevel.actions.filter((action) =>
+					action.effects.some((effect) => effect.equals(firstProp)),
+				);
 
-				let valid_action = false;
-				for (action_1 in actions_1) {
-					for (action_2 in actions_2) {
-						if (!(prevLevel.mutexRelations.get(action_1).includes(actions_2))) {
-							valid_action = true;
+				const actionsForSecond = prevActionLevel.actions.filter((action) =>
+					action.effects.some((effect) => effect.equals(secondProp)),
+				);
+
+				// Check if all actions producing these propositions are mutex
+				let allActionsAreMutex = true;
+
+				for (const action1 of actionsForFirst) {
+					for (const action2 of actionsForSecond) {
+						// If we find a pair that's not mutex, then props aren't mutex
+						if (
+							!prevActionLevel.mutexRelations.has(action1) ||
+							!prevActionLevel.mutexRelations.get(action1).includes(action2)
+						) {
+							allActionsAreMutex = false;
 							break;
 						}
 					}
-					if (valid_action) {
-						break;
-					}
+					if (!allActionsAreMutex) break;
 				}
 
-				if (!valid_action) {
-					continue;
+				// If all actions are mutex, then propositions are mutex
+				if (
+					allActionsAreMutex &&
+					actionsForFirst.length > 0 &&
+					actionsForSecond.length > 0
+				) {
+					this.addMutexRelation(firstProp, secondProp);
 				}
-
-				//prob should be map but idk what you want
-				if (!this.mutexRelations.has(first_prop)) {
-					this.mutexRelations.set(first_prop, []);
-				}
-				if (!this.mutexRelations.has(second_prop)) {
-					this.mutexRelations.set(second_prop, []);
-				}
-				this.mutexRelations.set(first_prop, [this.mutexRelations.get(first_prop), second_prop]);
-				this.mutexRelations.set(second_prop, [this.mutexRelations.get(second_prop), first_prop]);
 			}
 		}
 	}
 
-	propagateMutex() {}
+	// Helper to add mutex relation
+	addMutexRelation(prop1, prop2) {
+		if (!this.mutexRelations.has(prop1)) {
+			this.mutexRelations.set(prop1, []);
+		}
+		if (!this.mutexRelations.has(prop2)) {
+			this.mutexRelations.set(prop2, []);
+		}
+
+		this.mutexRelations.get(prop1).push(prop2);
+		this.mutexRelations.get(prop2).push(prop1);
+	}
 }
 
 class PlanningGraph {
 	constructor(problem) {
 		this.problem = problem;
+		this.propLevels = []; // List of proposition levels
+		this.actionLevels = []; // List of action levels
 
-		this.propLevels = []; // the list of proposition levels
-		this.actionLevels = []; // the list of action levels
-		// in the paper these are interlaced
+		// Initialize first proposition level with initial conditions
+		const firstLevel = new PropositionLevel();
+		for (const prop of problem.initial) {
+			firstLevel.add(prop);
+		}
 
-		// add the initial conditions
-		var first = new PropositionLevel();
-		problem.initial.forEach((c) => first.add(c));
-		this.propLevels.push(first);
+		this.propLevels.push(firstLevel);
 	}
 
-	// main construction of the planning graph
+	// Extend the planning graph by one level
 	extend() {
-		var last = this.propLevels[this.propLevels.length - 1];
+		const lastPropLevel = this.propLevels[this.propLevels.length - 1];
 
-		var nextA = new ActionLevel();
-		var nextP = new PropositionLevel();
+		// Create new action level
+		const nextActionLevel = new ActionLevel();
 
-		// add the actions
-		for (var action of this.problem.actionList) {
-			if (action.isApplicable(last)) {
-				nextA.add(action);
+		// Add applicable actions
+		for (const action of this.problem.actionList) {
+			if (action.isApplicable(lastPropLevel)) {
+				nextActionLevel.add(action);
 			}
 		}
 
-		// these functions need to be implemented still
+		// Add no-op actions
+		this.addNoOpActions(lastPropLevel, nextActionLevel);
 
-		this.addNoOpActions(last, nextA); //add the no ops
-		nextA.propagateMutex(last); // update mutex
-		this.actionLevels.push(nextA);
+		// Compute mutex relations for the action level
+		nextActionLevel.computeMutexRelations(lastPropLevel);
 
-		// add all properties
-		//I think all props should be on every level - just give them a truth value
-		nextA.actions.forEach((action) => {
-			action.effects
-				.forEach((prop) => {
-					nextP.add(prop);
-				});
-		});
+		// Add this action level to the graph
+		this.actionLevels.push(nextActionLevel);
 
-		nextP.propagateMutex();
+		// Create new proposition level
+		const nextPropLevel = new PropositionLevel();
 
-		this.propLevels.push(nextP);
+		// Add effects of actions to the proposition level
+		for (const action of nextActionLevel.actions) {
+			for (const effect of action.effects) {
+				nextPropLevel.add(effect);
+			}
+		}
 
-		return nextP;
+		// Compute mutex relations for the proposition level
+		nextPropLevel.computeMutexRelations(nextActionLevel);
+
+		// Add this proposition level to the graph
+		this.propLevels.push(nextPropLevel);
+
+		return nextPropLevel;
 	}
 
-	isLeveledOff(last_prop_layer, curr_prop_layer) {
-		//leveled off if last level propositions have same mutex and same number of props
-		last_props = last_prop_layer.propositions;
-		curr_props = curr_prop_layer.propositions;
-
-		if (last_props.lenght != curr_props.length) {
+	// Check if the planning graph has leveled off
+	isLeveledOff() {
+		if (this.propLevels.length < 2) {
 			return false;
 		}
 
-		for (prop in last_props) {
-			if (!curr_props.includes(prop)) {
-				return false;
-			}
-		}
+		const lastPropLevel = this.propLevels[this.propLevels.length - 1];
+		const prevPropLevel = this.propLevels[this.propLevels.length - 2];
 
-		last_mutex = last_prop_layer.mutexRelations;
-		curr_mutex = curr_prop_layer.mutexRelations;
-
-		if (last_mutex.size != curr_mutex.size) {
+		// Check if propositions are the same
+		if (
+			lastPropLevel.propositions.length !== prevPropLevel.propositions.length
+		) {
 			return false;
 		}
 
-		for (last_key in last_mutex.keys()) {
-			if (!curr_mutex.has(last_key)) {
+		// Check if each proposition in last level exists in previous level
+		for (const prop of lastPropLevel.propositions) {
+			if (!prevPropLevel.propositions.some((p) => p.equals(prop))) {
 				return false;
 			}
-			curr_arr = curr_mutex.get(last_key);
-			last_arr = last_mutex.get(last_key);
-			if (curr_arr.length != last_arr.length) {
+		}
+
+		// Check if mutex relations are the same
+		if (
+			lastPropLevel.mutexRelations.size !== prevPropLevel.mutexRelations.size
+		) {
+			return false;
+		}
+
+		// Check each mutex relation
+		for (const [prop, mutexProps] of lastPropLevel.mutexRelations.entries()) {
+			const prevMutexProps = prevPropLevel.mutexRelations.get(
+				prevPropLevel.propositions.find((p) => p.equals(prop)),
+			);
+
+			if (!prevMutexProps || prevMutexProps.length !== mutexProps.length) {
 				return false;
 			}
-			for (val in last_arr) {
-				if (!curr_arr.includes(prop)) {
+
+			for (const mutexProp of mutexProps) {
+				if (!prevMutexProps.some((p) => p.equals(mutexProp))) {
 					return false;
 				}
 			}
 		}
+
+		return true;
 	}
 
-	isSolvable() {}
+	// Check if goals are achievable at current level
+	goalsAchievable() {
+		const lastPropLevel = this.propLevels[this.propLevels.length - 1];
 
-	build() {}
+		// Check if all goals exist in the last proposition level
+		for (const goal of this.problem.goals) {
+			if (!lastPropLevel.propositions.some((p) => p.equals(goal))) {
+				return false;
+			}
+		}
 
-	addNoOpActions(last_prop_layer, next_action_layer) {
-		for (prop in last_prop_layer) {
-			let new_action = Action("no-op", [], [prop], [prop])
-			next_action_layer.add(new_action);
+		// Check if any two goals are mutex
+		for (let i = 0; i < this.problem.goals.length; i++) {
+			for (let j = i + 1; j < this.problem.goals.length; j++) {
+				const goal1 = this.problem.goals[i];
+				const goal2 = this.problem.goals[j];
+
+				const prop1 = lastPropLevel.propositions.find((p) => p.equals(goal1));
+				const prop2 = lastPropLevel.propositions.find((p) => p.equals(goal2));
+
+				if (lastPropLevel.areMutex(prop1, prop2)) {
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+
+	// Add no-op actions (frame actions) for all propositions in the previous level
+	addNoOpActions(prevPropLevel, nextActionLevel) {
+		for (const prop of prevPropLevel.propositions) {
+			// Create a no-op action that preserves this proposition
+			const noOp = new Action(`no-op-${prop.name}`, null, [prop], [prop]);
+			nextActionLevel.add(noOp);
 		}
 	}
 }
 
-export { PlanningGraph };
+export { PlanningGraph, ActionLevel, PropositionLevel };

@@ -6,15 +6,29 @@ class Proposition {
 	}
 
 	equals(other) {
-		return this.name === other.name && this.params === other.params && this.truth_value == other.truth_value;
+		return (
+			this.name === other.name &&
+			JSON.stringify(this.params) === JSON.stringify(other.params) &&
+			this.truth_value === other.truth_value
+		);
 	}
 
 	negation(other) {
-		return this.name === other.name && this.params === other.params && this.truth_value == !other.truth_value;
+		return (
+			this.name === other.name &&
+			JSON.stringify(this.params) === JSON.stringify(other.params) &&
+			this.truth_value !== other.truth_value
+		);
 	}
 
 	toString() {
-		return `${this.truth_value ? "" : "¬"}${this.name} (${this.params == null ? "" : Object.entries(this.params).map((el) => ` ${el[0]}=${el[1]}`)})`;
+		return `${this.truth_value ? "" : "¬"}${this.name} (${
+			this.params == null
+				? ""
+				: Object.entries(this.params)
+						.map((el) => ` ${el[0]}=${el[1]}`)
+						.join(",")
+		})`;
 	}
 }
 

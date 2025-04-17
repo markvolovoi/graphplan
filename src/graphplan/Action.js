@@ -1,16 +1,3 @@
-// class Effect {
-// 	constructor(name, type) {
-// 		this.name = name;
-// 		this.type = type; // should either be add effect or delete effect
-// 	}
-
-// 	toString() {
-// 		return `${this.type} Effect ${this.name}`;
-// 	}
-// }
-
-//Instead of effect I think we should just use propositions for effects
-
 class Action {
 	constructor(name, params, preconditions, effects) {
 		this.name = name;
@@ -20,40 +7,59 @@ class Action {
 	}
 
 	isApplicable(prevLevel) {
-		let preconditions_left = structuredClone(this.preconditions);
-		for (prop in prevLevel.propositions) {
-			if (preconditions_left.contains(prop)) {
-				let index = preconditions_left.indexOf(prop);
-				preconditions_left.splic(index, 1);
+		// Check if all preconditions are satisfied in the previous level
+		let preconditions_left = [...this.preconditions]; // Create a copy to modify
+
+		for (const prop of prevLevel.propositions) {
+			const index = preconditions_left.findIndex((p) => p.equals(prop));
+			if (index !== -1) {
+				preconditions_left.splice(index, 1);
 			}
-			if (preconditions_left.length == 0) {
+			if (preconditions_left.length === 0) {
 				return true;
 			}
 		}
-		return preconditions_left.length == 0;
+		return preconditions_left.length === 0;
 	}
 
-	//take in a list of propositions and return a list of new propositions after action is done
+	// Apply this action to a list of propositions and return new list
 	apply(old_propositions) {
-			for (effect in this.effects) {
-				let added_prop = false;
-				for (proposition in old_propositions) {
-					if (proposition.negation(effect)) {
-						let index = old_propositions.indexOf(propostition);
-						old_propositions.splice(index, 1);
-						old_propositions.append(effect);
-						added_prop = true;
-						continue;
-					}
-				}
-				if (!added_prop) {
-					old_propositions.append(effect);
+		// Create a copy to avoid modifying the original
+		const new_propositions = [...old_propositions];
+
+		for (const effect of this.effects) {
+			let added_prop = false;
+			for (let i = 0; i < new_propositions.length; i++) {
+				const proposition = new_propositions[i];
+				if (proposition.negation(effect)) {
+					// Replace contradicting proposition
+					new_propositions.splice(i, 1);
+					new_propositions.push(effect);
+					added_prop = true;
+					break;
+				} else if (proposition.equals(effect)) {
+					// Effect already present
+					added_prop = true;
+					break;
 				}
 			}
+
+			if (!added_prop) {
+				new_propositions.push(effect);
+			}
+		}
+
+		return new_propositions;
 	}
 
 	toString() {
-		return `${this.name} (${this.params == null ? "" : Object.entries(this.params).map((el) => ` ${el[0]}=${el[1]}`)})`;
+		return `${this.name} (${
+			this.params == null
+				? ""
+				: Object.entries(this.params)
+						.map((el) => ` ${el[0]}=${el[1]}`)
+						.join(",")
+		})`;
 	}
 }
 
