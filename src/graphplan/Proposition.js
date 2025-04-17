@@ -26,8 +26,8 @@ class Proposition {
 			this.params == null
 				? ""
 				: Object.entries(this.params)
-						.map((el) => ` ${el[0]}=${el[1]}`)
-						.join(",")
+						.map((el) => `${el[0]}=${el[1]}`)
+						.join(", ")
 		})`;
 	}
 }

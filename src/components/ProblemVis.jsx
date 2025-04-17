@@ -12,20 +12,20 @@ function ProblemVis(props) {
 					<p class="text-2xl text-center font-bold">{props.name}</p>
 					<div class="grid grid-cols-3 my-2 gap-3">
 						<div>
-							<p class="text-center font-medium">Initial Conditions</p>
+							<p class="text-center font-bold">Initial Conditions</p>
 							<For each={props.problem.initial}>
 								{/* {(value, index) => <div>{value.toString()}</div>} */}
 								{(value, index) => <PropVis prop={value}></PropVis>}
 							</For>
 						</div>
 						<div>
-							<p class="text-center font-medium">Actions</p>
+							<p class="text-center font-bold">Actions</p>
 							<For each={props.problem.actionList}>
 								{(value, index) => <ActionVis action={value}></ActionVis>}
 							</For>
 						</div>
 						<div>
-							<p class="text-center font-medium">Goals</p>
+							<p class="text-center font-bold">Goals</p>
 							<For each={props.problem.goals}>
 								{/* {(value, index) => <div>{value.toString()}</div>} */}
 								{(value, index) => <PropVis prop={value}></PropVis>}

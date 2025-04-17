@@ -6,17 +6,21 @@ function ActionVis(props) {
 	return (
 		<>
 			<div
-				class="bg-sky-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-sky-200 active:bg-sky-300 shadow-md"
+				class="bg-red-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-red-200 active:bg-red-300 shadow-md"
 				onclick={() => setOpened(!opened())}
 			>
-				<span class="font-bold block">{props.action.name}</span>
+				<span class="text-md block">{props.action.name}</span>
 				<Show when={opened()}>
-					<div class="block mt-2">
+					<div class="block mt-2 text-sm">
 						<p class="font-medium text-center">Preconditions:</p>
-						{props.action.preconditions}
+						<For each={props.action.preconditions}>
+							{(item, index) => <p>{item.toString()}</p>}
+						</For>
 						<br />
 						<p class="font-medium text-center">Effects:</p>
-						{props.action.effects}
+						<For each={props.action.effects}>
+							{(item, index) => <p>{item.toString()}</p>}
+						</For>
 					</div>
 				</Show>
 			</div>
@@ -30,10 +34,10 @@ function PropVis(props) {
 	return (
 		<>
 			<div
-				class="bg-lime-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-lime-200 active:bg-lime-300 shadow-md"
+				class="bg-sky-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-sky-200 active:bg-sky-300 shadow-md"
 				onclick={() => setOpened(!opened())}
 			>
-				<span class="font-bold block">
+				<span class="text-md block">
 					{props.prop.truth_value ? "" : "¬"}
 					{props.prop.name}
 					{props.prop.params["obj"] !== undefined
@@ -41,7 +45,7 @@ function PropVis(props) {
 						: ""}
 				</span>
 				<Show when={opened()}>
-					<div class="block mt-2">
+					<div class="block mt-2 text-sm">
 						<p class="font-medium text-center">Parameters:</p>
 						<For each={Object.entries(props.prop.params)}>
 							{(item, index) => (

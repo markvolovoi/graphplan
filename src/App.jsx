@@ -71,14 +71,16 @@ function App() {
 					Build Planning Graph
 				</button>
 
-				<div>
+				<div class="text-right">
 					<label class="select-none">
 						<input
 							type="checkbox"
 							checked={showGraph()}
 							onInput={(e) => setShowGraph(e.currentTarget.checked)}
 						/>
-						<span class="ml-2">View Planning Graph as Graph</span>
+						<span class="ml-2 font-medium text-gray-900">
+							View Planning Graph as Graph
+						</span>
 					</label>
 				</div>
 				<div class="w-full h-96 relative">
@@ -100,14 +102,16 @@ function App() {
 					Search For Plans
 				</button>
 
-				<div>
+				<div class="text-right">
 					<label class="select-none">
 						<input
 							type="checkbox"
 							checked={showPlanGraph()}
 							onInput={(e) => setShowPlanGraph(e.currentTarget.checked)}
 						/>
-						<span class="ml-2">View Plan as Graph</span>
+						<span class="ml-2 font-medium text-gray-900">
+							View Plan as Graph
+						</span>
 					</label>
 				</div>
 				<div class="w-full h-96 relative">
@@ -121,7 +125,7 @@ function App() {
 				</div>
 			</div>
 
-			<div class="bg-gray-200 p-6 w-full max-w-full fixed bottom-0 left-0 text-center">
+			<div class="bg-gray-200 p-3 w-full max-w-full fixed bottom-0 left-0 text-center">
 				Made by the Recursive Rascals for CS3511.
 			</div>
 		</div>
