@@ -6,19 +6,25 @@ class Proposition {
 	}
 
 	equals(other) {
-		return (
+		const result =
 			this.name === other.name &&
 			JSON.stringify(this.params) === JSON.stringify(other.params) &&
-			this.truth_value === other.truth_value
-		);
+			this.truth_value === other.truth_value;
+		if (result) {
+			console.log(`EQUAL: ${this.toString()} == ${other.toString()}`);
+		}
+		return result;
 	}
 
 	negation(other) {
-		return (
+		const result =
 			this.name === other.name &&
 			JSON.stringify(this.params) === JSON.stringify(other.params) &&
-			this.truth_value !== other.truth_value
-		);
+			this.truth_value !== other.truth_value;
+		if (result) {
+			console.log(`NEGATION: ${this.toString()} negates ${other.toString()}`);
+		}
+		return result;
 	}
 
 	toString() {

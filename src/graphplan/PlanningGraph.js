@@ -42,12 +42,18 @@ class ActionLevel {
 
 	// Check if two actions are mutex
 	areActionsMutex(action1, action2, prevLevel) {
-		// Check Interference: one action deletes precondition or add-effect of other
+		console.log(
+			`Checking mutex: ${action1.toString()} vs ${action2.toString()}`,
+		);
 
+		// Check Interference: one action deletes precondition or add-effect of other
 		// Check if action1 deletes any precondition of action2
 		for (const pre of action2.preconditions) {
 			for (const effect of action1.effects) {
 				if (effect.negation(pre)) {
+					console.log(
+						`MUTEX: ${action1.toString()} deletes precondition ${pre.toString()} of ${action2.toString()}`,
+					);
 					return true;
 				}
 			}
@@ -57,6 +63,9 @@ class ActionLevel {
 		for (const pre of action1.preconditions) {
 			for (const effect of action2.effects) {
 				if (effect.negation(pre)) {
+					console.log(
+						`MUTEX: ${action2.toString()} deletes precondition ${pre.toString()} of ${action1.toString()}`,
+					);
 					return true;
 				}
 			}
@@ -66,6 +75,9 @@ class ActionLevel {
 		for (const effect1 of action1.effects) {
 			for (const effect2 of action2.effects) {
 				if (effect1.negation(effect2)) {
+					console.log(
+						`MUTEX: ${action1.toString()} and ${action2.toString()} have contradictory effects: ${effect1.toString()} vs ${effect2.toString()}`,
+					);
 					return true;
 				}
 			}
@@ -76,11 +88,17 @@ class ActionLevel {
 			for (const pre2 of action2.preconditions) {
 				// Check if these preconditions are mutex in previous level
 				if (prevLevel.areMutex(pre1, pre2)) {
+					console.log(
+						`MUTEX: Preconditions ${pre1.toString()} and ${pre2.toString()} are mutex`,
+					);
 					return true;
 				}
 			}
 		}
 
+		console.log(
+			`Actions ${action1.toString()} and ${action2.toString()} are NOT mutex`,
+		);
 		return false;
 	}
 }

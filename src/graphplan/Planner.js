@@ -21,24 +21,43 @@ class GPSearch {
 
 	search() {
 		let level = 0;
+		const MAX_ITERATIONS = 1000; // Your iteration limit
 
-		while (level < 1000) {
+		console.log("=== Starting Graphplan Search ===");
+
+		while (level < MAX_ITERATIONS) {
+			console.log(`\n--- LEVEL ${level} ---`);
+
 			// Extend the planning graph if needed
 			if (level >= this.pGraph.propLevels.length - 1) {
+				console.log(`Extending planning graph to level ${level + 1}`);
 				this.pGraph.extend();
 			}
 
 			// Check if goals are achievable at this level
+			console.log(`Checking if goals are achievable at level ${level}:`);
+			console.log(
+				`Goals: ${this.pGraph.problem.goals.map((g) => g.toString()).join(", ")}`,
+			);
+
 			if (this.pGraph.goalsAchievable()) {
+				console.log(
+					`Goals appear achievable at level ${level}, attempting to extract plan`,
+				);
 				// Try to extract a plan
 				const plan = this.extractPlan(this.pGraph.problem.goals, level);
 				if (plan) {
+					console.log("Plan found!");
 					return plan;
 				}
+				console.log(`Failed to extract plan at level ${level}`);
+			} else {
+				console.log(`Goals NOT achievable at level ${level}`);
 			}
 
 			// Check if graph has leveled off
 			if (this.pGraph.isLeveledOff()) {
+				console.log("Planning graph has leveled off");
 				// Check if the set of memoized goals at the current level
 				// is the same as the previous level
 				if (
@@ -48,55 +67,75 @@ class GPSearch {
 					this.memoizedGoals.get(level - 1).size ===
 						this.memoizedGoals.get(level).size
 				) {
-					// No plan exists
+					console.log("Memoized goals not changing - No plan exists");
 					return null;
 				}
 			}
 
 			level++;
 		}
-		return null; // search failed from sheer iterations
+
+		console.warn(`Search exceeded maximum iterations (${MAX_ITERATIONS})`);
+		return null;
 	}
 
 	// Extract a plan that achieves the given goals at the given level
 	extractPlan(goals, level) {
+		console.log(
+			`Extracting plan for goals at level ${level}: ${goals.map((g) => g.toString()).join(", ")}`,
+		);
+
 		// Base case: reached level 0
 		if (level === 0) {
 			// Check if all goals are in the initial state
 			for (const goal of goals) {
 				if (!this.pGraph.problem.initial.some((prop) => prop.equals(goal))) {
+					console.log(`Goal ${goal.toString()} not in initial state`);
 					return null;
 				}
 			}
+			console.log("All goals in initial state, returning empty plan");
 			return new Plan();
 		}
 
 		// Check if this goal set has already been proven unsolvable
 		if (this.isGoalSetMemoized(goals, level)) {
+			console.log(`Goal set already proven unsolvable at level ${level}`);
 			return null;
 		}
 
 		// Create all subsets of actions at level-1 that achieve the goals
 		const actionSubsets = this.findActionSubsets(goals, level);
+		console.log(`Found ${actionSubsets.length} possible action subsets to try`);
 
 		// Try each subset
-		for (const actionSubset of actionSubsets) {
+		for (let i = 0; i < actionSubsets.length; i++) {
+			const actionSubset = actionSubsets[i];
+			console.log(`\nTrying action subset ${i + 1}/${actionSubsets.length}:`);
+			console.log(actionSubset.map((a) => a.toString()).join(", "));
+
 			// Collect preconditions of these actions as subgoals
 			const subgoals = this.getSubgoals(actionSubset, level - 1);
+			console.log(`Subgoals: ${subgoals.map((g) => g.toString()).join(", ")}`);
 
 			// Recursively extract a plan for these subgoals
 			const subplan = this.extractPlan(subgoals, level - 1);
 
 			if (subplan) {
+				console.log(`Found valid subplan at level ${level - 1}`);
 				// Add actions to the plan at the current level
 				for (const action of actionSubset) {
 					subplan.append(action, level);
 				}
 				return subplan;
 			}
+			console.log(`Failed with action subset ${i + 1}`);
 		}
 
 		// No plan found, memoize this goal set as unsolvable
+		console.log(
+			`No plan found for goals at level ${level}, memoizing as unsolvable`,
+		);
 		this.memoizeGoalSet(goals, level);
 		return null;
 	}
