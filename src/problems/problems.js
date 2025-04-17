@@ -6,8 +6,8 @@ import { rocketProblem } from "./rocket";
 
 const problems = {
 	Frogs: new Problem(
-		[new Proposition("Sitting", null)], // initial state
-		[new Proposition("Eat bug", null)], // goals
+		[new Proposition("Sitting", null, true), new Proposition("Ate Bug", null, false)], // initial state
+		[new Proposition("Ate Bug", null, true)], // goals
 		[new Action("Jump", null, null, null)], // actions
 	),
 	"Rocket Problem": rocketProblem,

@@ -4,11 +4,85 @@ class ActionLevel {
 		this.mutexRelations = mutexRelations;
 	}
 
+	constructor() {
+		this.actions = []
+		this.mutexRelations = new Map()
+	}
+
 	add(action) {
 		this.actions.append(action);
 	}
 
-	isMutex() {}
+	isMutex() {
+		for (let i = 0; i < this.actions.length; i++) {
+			for (let j = i + 1; l < this.actions.length; j++) {
+				let first_action = this.actions[i];
+				let second_action = this.actions[j];
+
+				let mutex = true;
+
+				//ways to be mutex: if preconditions are opposite
+				for (pre_1 in first_action.preconditions) {
+					for (pre_2 in second_action.preconditions) {
+						if (pre_1.negation(pre_2)) {
+							mutex = false;
+							break;
+						}
+					}
+					if (!mutex) {
+						break;
+					}
+
+					for (pre_2 in second_action.effects) {
+						if (pre_1.negation(pre_2)) {
+							mutex = false;
+							break;
+						}
+					}
+					if (!mutex) {
+						break;
+					}
+				}
+
+				//if effects are opposite
+				for (pre_1 in first_action.effects) {
+					for (pre_2 in second_action.effects) {
+						if (pre_1.negation(pre_2)) {
+							mutex = false;
+							break;
+						}
+					}
+					if (!mutex) {
+						break;
+					}
+
+					for (pre_2 in second_action.propositions) {
+						if (pre_1.negation(pre_2)) {
+							mutex = false;
+							break;
+						}
+					}
+					if (!mutex) {
+						break;
+					}
+				}
+
+				if (!mutex) {
+					continue;
+				}
+
+				//prob should be map but idk what you want
+				if (!this.mutexRelations.has(first_action)) {
+					this.mutexRelations.set(first_action, []);
+				}
+				if (!this.mutexRelations.has(second_action)) {
+					this.mutexRelations.set(second_action, []);
+				}
+				this.mutexRelations.set(first_action, [this.mutexRelations.get(first_action), second_action]);
+				this.mutexRelations.set(second_action, [this.mutexRelations.get(second_action), first_action]);
+			}
+		}
+	}
 
 	propagateMutex() {}
 }
@@ -19,16 +93,72 @@ class PropositionLevel {
 		this.mutexRelations = mutexRelations;
 	}
 
-	add(p) {
-		this.actions.append(p);
+	constructor() {
+		this.propositions = []
+		this.mutexRelations = new Map()
 	}
 
-	isMutex() {}
+	add(p) {
+		this.propositions.append(p);
+	}
+
+	//pass in previous action level
+	isMutex(prevLevel) {
+		for (let i = 0; i < this.propositions.length; i++) {
+			for (let j = i + 1; l < this.propositions.length; j++) {
+				let first_prop = this.propositions[i];
+				let second_prop = this.propositions[j];
+
+				//ways to be mutex: if are opposite
+				if (first_prop.negation(second_prop)) {
+					continue;
+				}
+
+				//if the only actions that lead to each prop are mutex, they are mutex
+				prev_actions = prevLevel.actions;
+				let actions_1 = [];
+				let actions_2 = [];
+				for (action in prev_actions) {
+					if (action.effects.includes(prop_1)) {
+						actions_1.append(action);
+					}
+					if (action.effects.includes(prop_2)) {
+						actions_2.append(action);
+					}
+				}
+
+				let valid_action = false;
+				for (action_1 in actions_1) {
+					for (action_2 in actions_2) {
+						if (!(prevLevel.mutexRelations.get(action_1).includes(actions_2))) {
+							valid_action = true;
+							break;
+						}
+					}
+					if (valid_action) {
+						break;
+					}
+				}
+
+				if (!valid_action) {
+					continue;
+				}
+
+				//prob should be map but idk what you want
+				if (!this.mutexRelations.has(first_prop)) {
+					this.mutexRelations.set(first_prop, []);
+				}
+				if (!this.mutexRelations.has(second_prop)) {
+					this.mutexRelations.set(second_prop, []);
+				}
+				this.mutexRelations.set(first_prop, [this.mutexRelations.get(first_prop), second_prop]);
+				this.mutexRelations.set(second_prop, [this.mutexRelations.get(second_prop), first_prop]);
+			}
+		}
+	}
 
 	propagateMutex() {}
 }
-
-class PropositionLevel {}
 
 class PlanningGraph {
 	constructor(problem) {
@@ -65,9 +195,9 @@ class PlanningGraph {
 		this.actionLevels.push(nextA);
 
 		// add all properties
+		//I think all props should be on every level - just give them a truth value
 		nextA.actions.forEach((action) => {
 			action.effects
-				.filter((e) => e.type === "add")
 				.forEach((prop) => {
 					nextP.add(prop);
 				});
@@ -80,11 +210,55 @@ class PlanningGraph {
 		return nextP;
 	}
 
-	isLeveledOff() {}
+	isLeveledOff(last_prop_layer, curr_prop_layer) {
+		//leveled off if last level propositions have same mutex and same number of props
+		last_props = last_prop_layer.propositions;
+		curr_props = curr_prop_layer.propositions;
+
+		if (last_props.lenght != curr_props.length) {
+			return false;
+		}
+
+		for (prop in last_props) {
+			if (!curr_props.includes(prop)) {
+				return false;
+			}
+		}
+
+		last_mutex = last_prop_layer.mutexRelations;
+		curr_mutex = curr_prop_layer.mutexRelations;
+
+		if (last_mutex.size != curr_mutex.size) {
+			return false;
+		}
+
+		for (last_key in last_mutex.keys()) {
+			if (!curr_mutex.has(last_key)) {
+				return false;
+			}
+			curr_arr = curr_mutex.get(last_key);
+			last_arr = last_mutex.get(last_key);
+			if (curr_arr.length != last_arr.length) {
+				return false;
+			}
+			for (val in last_arr) {
+				if (!curr_arr.includes(prop)) {
+					return false;
+				}
+			}
+		}
+	}
 
 	isSolvable() {}
 
 	build() {}
+
+	addNoOpActions(last_prop_layer, next_action_layer) {
+		for (prop in last_prop_layer) {
+			let new_action = Action("no-op", [], [prop], [prop])
+			next_action_layer.add(new_action);
+		}
+	}
 }
 
 export { PlanningGraph };
