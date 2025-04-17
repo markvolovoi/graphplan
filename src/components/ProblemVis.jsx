@@ -1,5 +1,5 @@
 import { Show } from "solid-js";
-import { ActionVis } from "./ItemVis";
+import { ActionVis, PropVis } from "./ItemVis";
 
 function ProblemVis(props) {
 	return (
@@ -14,7 +14,8 @@ function ProblemVis(props) {
 						<div>
 							<p class="text-center font-medium">Initial Conditions</p>
 							<For each={props.problem.initial}>
-								{(value, index) => <div>{value.toString()}</div>}
+								{/* {(value, index) => <div>{value.toString()}</div>} */}
+								{(value, index) => <PropVis prop={value}></PropVis>}
 							</For>
 						</div>
 						<div>
@@ -26,7 +27,8 @@ function ProblemVis(props) {
 						<div>
 							<p class="text-center font-medium">Goals</p>
 							<For each={props.problem.goals}>
-								{(value, index) => <div>{value.toString()}</div>}
+								{/* {(value, index) => <div>{value.toString()}</div>} */}
+								{(value, index) => <PropVis prop={value}></PropVis>}
 							</For>
 						</div>
 					</div>
