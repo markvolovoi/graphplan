@@ -4,4 +4,5 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
 	plugins: [solid(), tailwindcss()],
+	base: "https://graphplan.mvol.dev/",
 });
