@@ -33,6 +33,32 @@ function createReadableLabel(node) {
 	return node.id;
 }
 
+// Calculate minimum dimensions based on graph complexity
+function calculateDimensions(nodes, levelInfo) {
+	if (!nodes || nodes.length === 0) return { width: 1200, height: 800 };
+
+	// Get the maximum level
+	const maxLevel = Math.max(...nodes.map((n) => n.level ?? 0));
+
+	// Calculate nodes per level
+	const nodesPerLevel = {};
+	nodes.forEach((node) => {
+		nodesPerLevel[node.level] = (nodesPerLevel[node.level] || 0) + 1;
+	});
+
+	// Get maximum nodes in any level
+	const maxNodesInLevel = Math.max(...Object.values(nodesPerLevel));
+
+	// Calculate minimum dimensions with reasonable base values
+	// Reduce the spacing between levels slightly to prevent overly wide graphs
+	const minWidth = Math.max(1200, (maxLevel + 1) * 200);
+
+	// Each node needs vertical space - but don't make it too tall
+	const minHeight = Math.max(800, Math.min(maxNodesInLevel * 60 + 120, 1600));
+
+	return { width: minWidth, height: minHeight };
+}
+
 export function GraphView(props) {
 	let svgRef;
 	let tooltipRef;
@@ -72,7 +98,7 @@ export function GraphView(props) {
 					level: i * 2, // Position prop levels at even numbers
 					type: "prop",
 					count: lev.propositions.length,
-					label: `Proposition Level ${i}`,
+					label: `Prop. Level ${i}`,
 				});
 
 				lev.propositions.forEach((p) =>
@@ -91,7 +117,7 @@ export function GraphView(props) {
 					level: i * 2 + 1, // Position action levels at odd numbers
 					type: "action",
 					count: lev.actions.length,
-					label: `Action Level ${i}`,
+					label: `Act. Level ${i}`,
 				});
 
 				lev.actions.forEach((a) =>
@@ -246,25 +272,65 @@ export function GraphView(props) {
 			}
 		}
 
-		// SVG setup
-		const width = svgRef.clientWidth || 800;
-		const height = svgRef.clientHeight || 600;
+		// Error handling for empty nodes
+		if (nodes.length === 0) {
+			const svg = d3.select(svgRef);
+			const width = svgRef.clientWidth || 800;
+			const height = svgRef.clientHeight || 600;
+
+			svg
+				.append("text")
+				.attr("x", width / 2)
+				.attr("y", height / 2)
+				.attr("text-anchor", "middle")
+				.attr("fill", "red")
+				.text("No nodes to display. Check console for errors.");
+			console.error("No nodes found to visualize");
+			return;
+		}
+
+		// Calculate appropriate dimensions based on graph complexity
+		// But limit maximum dimensions to prevent extremely large graphs
+		const rawDimensions = calculateDimensions(nodes, levelInfo);
+		const width = Math.min(rawDimensions.width, 3000); // Cap width
+		const height = Math.min(rawDimensions.height, 2000); // Cap height
+
+		// SVG setup with dynamic sizing
 		const svg = d3.select(svgRef);
 		svg.attr("viewBox", [0, 0, width, height]);
 		const g = svg.append("g");
 
-		// Zoom behavior
+		// Zoom behavior with improved initial centering
 		const zoom = d3
 			.zoom()
-			.scaleExtent([0.1, 4])
+			.scaleExtent([0.3, 4]) // Adjusted minimum scale
 			.on("zoom", (e) => g.attr("transform", e.transform));
 
-		svg
-			.call(zoom)
-			.call(
-				zoom.transform,
-				d3.zoomIdentity.translate(width / 2, height / 2).scale(0.8),
-			);
+		svg.call(zoom);
+
+		// Center the view properly in the container
+		const svgBounds = svgRef.getBoundingClientRect();
+		const containerWidth = svgBounds.width || 800;
+		const containerHeight = svgBounds.height || 600;
+
+		// Use a larger initial scale to show more detail
+		const initialScale = 1.6;
+
+		// Center the graph in the viewport with additional offsets to counteract the top-left bias
+		// The offsets are calculated as a percentage of the container dimensions
+		const translateX =
+			containerWidth / 2 - (width * initialScale) / 2 + containerWidth * 0.1; // Add 10% rightward offset
+		// Adjust translateY to move graph down even more
+		const translateY =
+			containerHeight / 2 -
+			(height * initialScale) / 2 +
+			containerHeight * 0.15; // Add 15% downward offset
+
+		// Apply transform
+		svg.call(
+			zoom.transform,
+			d3.zoomIdentity.translate(translateX, translateY).scale(initialScale),
+		);
 
 		// Arrow markers for links
 		svg
@@ -312,7 +378,7 @@ export function GraphView(props) {
 				.attr("ry", 5)
 				.attr("opacity", 0.3);
 
-			// Add level headers
+			// Add level headers with increased text size
 			g.append("g")
 				.selectAll("text")
 				.data(levelInfo)
@@ -320,9 +386,9 @@ export function GraphView(props) {
 				.attr("x", (d) => (d.level + 1) * levelSpacing)
 				.attr("y", 20)
 				.attr("text-anchor", "middle")
-				.attr("font-size", "12px")
+				.attr("font-size", "26px") // Increased from 12px
 				.attr("font-weight", "bold")
-				.attr("font-family", "sans-serif")
+				.attr("font-family", "Afacad Flux")
 				.attr("fill", (d) => (d.type === "prop" ? "#255040" : "#352a5b"))
 				.text((d) => d.label);
 		}
@@ -341,29 +407,16 @@ export function GraphView(props) {
 				d.type !== "mutex" ? `url(#arrow-${d.type})` : null,
 			);
 
-		// Error handling for empty nodes
-		if (nodes.length === 0) {
-			svg
-				.append("text")
-				.attr("x", width / 2)
-				.attr("y", height / 2)
-				.attr("text-anchor", "middle")
-				.attr("fill", "red")
-				.text("No nodes to display. Check console for errors.");
-			console.error("No nodes found to visualize");
-			return;
-		}
-
-		// Create nodes
+		// Create nodes with increased size
 		const node = g
 			.append("g")
 			.selectAll("circle")
 			.data(nodes)
 			.join("circle")
-			.attr("r", (d) => (d.type === "action" ? 7 : 6))
+			.attr("r", (d) => (d.type === "action" ? 10 : 8)) // Increased node size
 			.attr("fill", (d) => nodeColors[d.type])
 			.attr("stroke", "#fff")
-			.attr("stroke-width", 1.5)
+			.attr("stroke-width", 2) // Slightly thicker stroke
 			.call(
 				d3
 					.drag()
@@ -384,15 +437,39 @@ export function GraphView(props) {
 			)
 			.on("mouseover", function (event, d) {
 				d3.select(this)
-					.attr("r", d.type === "action" ? 9 : 8)
+					.attr("r", d.type === "action" ? 12 : 10) // Increased hover size to match new node size
 					.attr("stroke", "#38a169");
+
+				// Get SVG bounds for proper positioning
+				const svgRect = svgRef.getBoundingClientRect();
+				const tooltipWidth = 200;
+				const tooltipHeight = 50;
+
+				// Calculate position relative to the SVG element
+				// Using offset positions to ensure tooltip stays within the SVG
+				const mouseX = event.clientX - svgRect.left;
+				const mouseY = event.clientY - svgRect.top;
+
+				// Position tooltip relative to mouse but keep inside SVG bounds
+				let x = mouseX + 15;
+				let y = mouseY - 15;
+
+				// Ensure tooltip stays within SVG boundaries
+				if (x + tooltipWidth > svgRect.width) {
+					x = mouseX - tooltipWidth - 15;
+				}
+
+				if (y + tooltipHeight > svgRect.height) {
+					y = mouseY - tooltipHeight - 15;
+				}
+
+				// Keep tooltip from going off the left or top edges
+				x = Math.max(10, x);
+				y = Math.max(10, y);
 
 				// Show the tooltip with full node information
 				setTooltipContent(d.id);
-				setTooltipPosition({
-					x: event.clientX + 10,
-					y: event.clientY - 10,
-				});
+				setTooltipPosition({ x, y });
 				setTooltipVisible(true);
 
 				// Highlight connected elements
@@ -424,14 +501,37 @@ export function GraphView(props) {
 			})
 			.on("mousemove", function (event) {
 				// Update tooltip position when mouse moves
-				setTooltipPosition({
-					x: event.clientX + 10,
-					y: event.clientY - 10,
-				});
+				// Get SVG bounds for proper positioning
+				const svgRect = svgRef.getBoundingClientRect();
+				const tooltipWidth = 200;
+				const tooltipHeight = 50;
+
+				// Calculate position relative to the SVG element
+				const mouseX = event.clientX - svgRect.left;
+				const mouseY = event.clientY - svgRect.top;
+
+				// Position tooltip relative to mouse but keep inside SVG bounds
+				let x = mouseX + 15;
+				let y = mouseY - 15;
+
+				// Ensure tooltip stays within SVG boundaries
+				if (x + tooltipWidth > svgRect.width) {
+					x = mouseX - tooltipWidth - 15;
+				}
+
+				if (y + tooltipHeight > svgRect.height) {
+					y = mouseY - tooltipHeight - 15;
+				}
+
+				// Keep tooltip from going off the left or top edges
+				x = Math.max(10, x);
+				y = Math.max(10, y);
+
+				setTooltipPosition({ x, y });
 			})
 			.on("mouseout", function () {
 				d3.select(this)
-					.attr("r", (d) => (d.type === "action" ? 7 : 6))
+					.attr("r", (d) => (d.type === "action" ? 10 : 8)) // Restore to new larger default size
 					.attr("stroke", "#fff");
 
 				// Hide tooltip
@@ -443,25 +543,43 @@ export function GraphView(props) {
 				label.attr("opacity", 1);
 			});
 
-		// Create labels with simplified text
+		// Create labels with simplified text and improved readability
 		const label = g
 			.append("g")
-			.selectAll("text")
+			.selectAll("g")
 			.data(nodes)
-			.join("text")
-			.text((d) => createReadableLabel(d))
-			.attr("font-size", "10px")
-			.attr("font-family", "sans-serif")
-			.attr("dx", 9)
-			.attr("dy", "0.35em")
-			.attr("pointer-events", "none")
-			.attr("fill", "#333");
+			.join("g")
+			.attr("pointer-events", "none");
 
-		// Layout calculations
+		// Optional text background for better readability
+		label
+			.append("rect")
+			.attr("fill", "white")
+			.attr("opacity", 0.7)
+			.attr("rx", 3)
+			.attr("ry", 3);
+
+		// Text with significantly increased size for better visibility
+		const textElements = label
+			.append("text")
+			.text((d) => createReadableLabel(d))
+			.attr("font-size", "22px") // Significantly increased for better visibility
+			.attr("font-family", "Afacad Flux")
+			.attr("font-weight", "500")
+			.attr("dx", 14) // Slightly increased distance from node
+			.attr("dy", "0.35em")
+			.attr("fill", "#333")
+			.attr("stroke", "#ffffff") // Add white outline for better readability
+			.attr("stroke-width", "0.7px") // Slightly thicker for larger text
+			.attr("paint-order", "stroke"); // Draw stroke behind text
+
+		// No background rectangles as user didn't like them
+
+		// Layout calculations - improved spacing
 		const maxLevel = Math.max(...nodes.map((n) => n.level));
 		const levelSpacing = width / (maxLevel + 2); // Leave room on edges
 
-		// Initialize node positions based on levels
+		// Initialize node positions based on levels with improved distribution
 		nodes.forEach((node) => {
 			// Horizontal position fixed by level
 			node.x = (node.level + 1) * levelSpacing;
@@ -472,7 +590,8 @@ export function GraphView(props) {
 			const nodeIndexInLevel = nodesInSameLevel.indexOf(node);
 
 			if (levelSize > 1) {
-				const levelHeight = height * 0.7;
+				// Use more of the available height for better spacing
+				const levelHeight = height * 0.8;
 				const gap = levelHeight / (levelSize - 1);
 				node.y = (height - levelHeight) / 2 + nodeIndexInLevel * gap;
 			} else {
@@ -480,7 +599,7 @@ export function GraphView(props) {
 			}
 		});
 
-		// Force simulation
+		// Force simulation with further improved parameters for better spacing
 		const simulation = d3
 			.forceSimulation(nodes)
 			.force(
@@ -488,10 +607,10 @@ export function GraphView(props) {
 				d3
 					.forceLink(links)
 					.id((d) => d.id)
-					.distance(100),
+					.distance(150), // Increased for better spacing with larger nodes and text
 			)
-			.force("charge", d3.forceManyBody().strength(-200))
-			.force("collide", d3.forceCollide().radius(20))
+			.force("charge", d3.forceManyBody().strength(-400)) // Even stronger repulsion
+			.force("collide", d3.forceCollide().radius(40)) // Much larger collision radius to account for labels
 			// Strong x force to keep nodes in their levels
 			.force(
 				"x",
@@ -503,17 +622,20 @@ export function GraphView(props) {
 			// Weaker y force to allow vertical distribution
 			.force("y", d3.forceY(height / 2).strength(0.05))
 			.alpha(1)
-			.alphaDecay(0.02);
+			.alphaDecay(0.02); // Slower decay for better stabilization
 
-		// Update positions on each tick
+		// Update positions on each tick with improved constraints
 		simulation.on("tick", () => {
 			// Constrain x position to maintain level structure
 			nodes.forEach((node) => {
-				// Fix x position to level
-				node.x = (node.level + 1) * levelSpacing;
+				// Fix x position to level with slight jitter for better readability when nodes overlap
+				// This creates a small horizontal offset to prevent text overlap
+				const jitter = (node.id.length % 3) * 5 - 5; // -5, 0, or 5px offset based on ID length
+				node.x = (node.level + 1) * levelSpacing + jitter;
 
-				// Keep y position within bounds
-				node.y = Math.max(40, Math.min(height - 30, node.y));
+				// Keep y position within bounds with increased padding
+				const padding = 60; // Increased padding to prevent cutoff with larger elements
+				node.y = Math.max(padding, Math.min(height - padding, node.y));
 			});
 
 			link
@@ -524,7 +646,7 @@ export function GraphView(props) {
 
 			node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
 
-			label.attr("x", (d) => d.x).attr("y", (d) => d.y);
+			label.attr("transform", (d) => `translate(${d.x},${d.y})`);
 		});
 	});
 
@@ -535,22 +657,26 @@ export function GraphView(props) {
 				style="width:100%; height:100%; border-radius: 5px; background:#fafafa; overflow: hidden"
 			/>
 
-			{/* Tooltip */}
+			{/* Tooltip - Absolute positioning relative to SVG container */}
 			<div
 				ref={tooltipRef}
 				style={{
-					position: "fixed",
+					position: "absolute", // Absolute positioning within parent container
 					left: `${tooltipPosition().x}px`,
 					top: `${tooltipPosition().y}px`,
-					background: "rgba(0, 0, 0, 0.7)",
+					background: "rgba(0, 0, 0, 0.8)",
 					color: "white",
-					padding: "5px 10px",
+					padding: "8px 12px",
 					borderRadius: "4px",
-					fontSize: "12px",
+					fontSize: "14px", // Larger font size for tooltips
+					fontWeight: "500",
 					pointerEvents: "none",
 					zIndex: 1000,
 					opacity: tooltipVisible() ? 1 : 0,
 					transition: "opacity 0.2s",
+					maxWidth: "200px",
+					wordWrap: "break-word",
+					boxShadow: "0 2px 8px rgba(0,0,0,0.2)", // Add shadow for better visibility
 				}}
 			>
 				{tooltipContent()}
