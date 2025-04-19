@@ -6,7 +6,7 @@ function ActionVis(props) {
 	return (
 		<>
 			<div
-				class="bg-red-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-red-200 active:bg-red-300 shadow-md"
+				class="bg-yorple-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-yorple-200 active:bg-yorple-300 shadow-md"
 				onclick={() => setOpened(!opened())}
 			>
 				<span class="text-md block">{props.action.name}</span>
@@ -34,7 +34,7 @@ function PropVis(props) {
 	return (
 		<>
 			<div
-				class="bg-sky-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-sky-200 active:bg-sky-300 shadow-md"
+				class="bg-froggreen-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-froggreen-200 active:bg-froggreen-300 shadow-md"
 				onclick={() => setOpened(!opened())}
 			>
 				<span class="text-md block">

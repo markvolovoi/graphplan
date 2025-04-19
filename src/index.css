@@ -1,7 +1,37 @@
 @import "tailwindcss";
 
+@theme {
+	--color-froggreen-50: oklch(96.08% 0.013 172.37);
+	--color-froggreen-100: oklch(92.36% 0.027 170.26);
+	--color-froggreen-200: oklch(84.09% 0.055 169.56);
+	--color-froggreen-300: oklch(76.4% 0.079 169.32);
+	--color-froggreen-400: oklch(68.45% 0.103 166.84);
+	--color-froggreen-500: oklch(55.69% 0.082 166.66);
+	--color-froggreen-600: oklch(47.35% 0.068 167.39);
+	--color-froggreen-700: oklch(39.51% 0.056 167);
+	--color-froggreen-800: oklch(29.94% 0.039 168.39);
+	--color-froggreen-900: oklch(21.06% 0.024 166.74);
+	--color-froggreen-950: oklch(15.38% 0.015 170.45);
+}
+@theme {
+	--color-yorple-50: oklch(94.26% 0.015 298.56);
+	--color-yorple-100: oklch(89.25% 0.029 296.71);
+	--color-yorple-200: oklch(77.48% 0.063 296.36);
+	--color-yorple-300: oklch(66.49% 0.096 294.23);
+	--color-yorple-400: oklch(54.19% 0.133 291.96);
+	--color-yorple-500: oklch(45.26% 0.129 291.02);
+	--color-yorple-600: oklch(38.38% 0.107 291.15);
+	--color-yorple-700: oklch(32.39% 0.084 291.28);
+	--color-yorple-800: oklch(25.02% 0.061 292.6);
+	--color-yorple-900: oklch(17.92% 0.037 292.54);
+	--color-yorple-950: oklch(13.04% 0.019 296.86);
+}
+@theme {
+	--font-sans: "Afacad Flux";
+}
+
 :root {
-	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+	font-family: "Afacad Flux", system-ui, Avenir, Helvetica, Arial, sans-serif;
 	line-height: 1.5;
 	font-weight: 400;
 

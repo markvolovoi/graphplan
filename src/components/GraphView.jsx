@@ -286,9 +286,9 @@ export function GraphView(props) {
 
 		// Color scheme
 		const nodeColors = {
-			prop: "#4299e1", // blue
-			action: "#ed8936", // orange
-			selected: "#38a169", // green for selected nodes
+			prop: "#3d8369",
+			action: "#584597",
+			selected: "#000000",
 		};
 
 		// Level visualization
@@ -305,8 +305,8 @@ export function GraphView(props) {
 				.attr("y", 30) // Start below the labels
 				.attr("width", levelSpacing - 20)
 				.attr("height", height - 60)
-				.attr("fill", (d) => (d.type === "prop" ? "#e6f7ff" : "#fff8e6"))
-				.attr("stroke", (d) => (d.type === "prop" ? "#bde0ff" : "#ffe8a9"))
+				.attr("fill", (d) => (d.type === "prop" ? "#d5ece3" : "#ddd8ed"))
+				.attr("stroke", (d) => (d.type === "prop" ? "#7ec3aa" : "#9788c9"))
 				.attr("stroke-width", 1)
 				.attr("rx", 5)
 				.attr("ry", 5)
@@ -323,7 +323,7 @@ export function GraphView(props) {
 				.attr("font-size", "12px")
 				.attr("font-weight", "bold")
 				.attr("font-family", "sans-serif")
-				.attr("fill", (d) => (d.type === "prop" ? "#1a7fd1" : "#c76500"))
+				.attr("fill", (d) => (d.type === "prop" ? "#255040" : "#352a5b"))
 				.text((d) => d.label);
 		}
 
@@ -532,7 +532,7 @@ export function GraphView(props) {
 		<div style="width:100%; height:100%; position: relative;">
 			<svg
 				ref={svgRef}
-				style="width:100%; height:100%; border:1px solid #ddd; background:#fafafa; overflow: hidden"
+				style="width:100%; height:100%; border-radius: 5px; background:#fafafa; overflow: hidden"
 			/>
 
 			{/* Tooltip */}
@@ -560,11 +560,11 @@ export function GraphView(props) {
 			<div style="position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 8px; border-radius: 5px; font-size: 12px; box-shadow: 0 0 5px rgba(0,0,0,0.1);">
 				<div style="font-weight: bold; margin-bottom: 5px;">Legend</div>
 				<div style="display: flex; align-items: center; margin-bottom: 4px;">
-					<div style="width: 12px; height: 12px; border-radius: 50%; background: #4299e1; margin-right: 6px;"></div>
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #3d8369; margin-right: 6px;"></div>
 					<span>Proposition</span>
 				</div>
 				<div style="display: flex; align-items: center; margin-bottom: 4px;">
-					<div style="width: 12px; height: 12px; border-radius: 50%; background: #ed8936; margin-right: 6px;"></div>
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #584597; margin-right: 6px;"></div>
 					<span>Action</span>
 				</div>
 				<div style="display: flex; align-items: center; margin-bottom: 4px;">

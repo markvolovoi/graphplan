@@ -23,14 +23,14 @@ function App() {
 	return (
 		<div class="flex justify-center w-full max-w-full py-12 mb-24">
 			<div class="w-1/2 space-y-6">
-				<h1 class="text-5xl font-medium">Graphplan</h1>
+				<h1 class="text-5xl font-medium text-zinc-800">Graphplan</h1>
 
-				<p class="text-gray-900">
+				<p class="text-zinc-800">
 					This website allows you to visualize the workings of the Graphplan
 					algorithm, originally outlined{" "}
 					<a
 						href="http://www.cs.cmu.edu/~avrim/Papers/graphplan.pdf"
-						class="text-blue-500 hover:text-blue-800 cursor-pointer transition-all"
+						class="text-froggreen-500 hover:text-froggreen-700 cursor-pointer transition-all"
 					>
 						here
 					</a>
@@ -41,7 +41,7 @@ function App() {
 				<form class="w-full">
 					<label
 						for="problemSelect"
-						class="block mb-2 text-sm font-medium text-gray-900"
+						class="block mb-2 text-sm font-medium text-zinc-800"
 					>
 						Select a problem set
 					</label>
@@ -49,7 +49,7 @@ function App() {
 						id="problemSelect"
 						value={problemName()}
 						onChange={(e) => setProblemName(e.currentTarget.value)}
-						class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3"
+						class="bg-white border border-gray-300 text-zinc-800 text-sm rounded-lg focus:ring-froggreen-500 focus:border-froggreen-500 block w-full p-3"
 					>
 						<option selected value="null">
 							Choose a problem set
@@ -60,13 +60,13 @@ function App() {
 					</select>
 				</form>
 
-				<div class="w-full h-72 drop-shadow-md rounded-md border border-gray-300 p-6 bg-white overflow-x-clip overflow-y-scroll">
+				<div class="w-full h-72 drop-shadow-md rounded-md border border-zinc-300 p-6 bg-zinc-50 overflow-x-clip overflow-y-scroll">
 					<ProblemVis name={problemName()} problem={problems[problemName()]} />
 				</div>
 
 				<button
 					onClick={buildPlanningGraph}
-					class="w-full p-3 bg-teal-600 border-none text-white rounded-md hover:bg-teal-700 active:bg-teal-800 cursor-pointer shadow-md hover:shadow-lg transition-all"
+					class="w-full p-3 bg-froggreen-500 border-none text-white rounded-md hover:bg-froggreen-600 active:bg-froggreen-700 cursor-pointer shadow-md hover:shadow-lg transition-all"
 				>
 					Build Planning Graph
 				</button>
@@ -78,12 +78,12 @@ function App() {
 							checked={showGraph()}
 							onInput={(e) => setShowGraph(e.currentTarget.checked)}
 						/>
-						<span class="ml-2 font-medium text-gray-900">
+						<span class="ml-2 font-medium text-zinc-800">
 							View Planning Graph as Graph
 						</span>
 					</label>
 				</div>
-				<div class="w-full h-96 relative">
+				<div class="w-full h-96 relative drop-shadow-md rounded-md border border-zinc-300 bg-zinc-50">
 					{isGraphBuilt() && showGraph() ? (
 						<GraphView graph={planningGraph()} />
 					) : (
@@ -97,7 +97,7 @@ function App() {
 
 				<button
 					onClick={searchForPlans}
-					class="w-full p-3 bg-teal-600 border-none text-white rounded-md hover:bg-teal-700 active:bg-teal-800 cursor-pointer shadow-md hover:shadow-lg transition-all"
+					class="w-full p-3 bg-froggreen-500 border-none text-white rounded-md hover:bg-froggreen-600 active:bg-froggreen-700 cursor-pointer shadow-md hover:shadow-lg transition-all"
 				>
 					Search For Plans
 				</button>
@@ -114,7 +114,7 @@ function App() {
 						</span>
 					</label>
 				</div>
-				<div class="w-full h-96 relative">
+				<div class="w-full h-96 relative drop-shadow-md rounded-md border border-zinc-300 bg-zinc-50">
 					{isPlanGenerated() && showPlanGraph() ? (
 						<GraphView plan={plan()} />
 					) : (
@@ -125,7 +125,7 @@ function App() {
 				</div>
 			</div>
 
-			<div class="bg-gray-200 p-3 w-full max-w-full fixed bottom-0 left-0 text-center">
+			<div class="bg-zinc-200 p-3 w-full max-w-full fixed bottom-0 left-0 text-center">
 				Made by the Recursive Rascals for CS3511.
 			</div>
 		</div>
