@@ -1,33 +1,42 @@
 import { onMount, createSignal } from "solid-js";
 import * as d3 from "d3";
 
+//from gpt - makes text wrap
+function truncateText(text, maxWidth, fontSize = 22) {
+	const avgCharWidth = fontSize * 0.6; // rough average
+	const maxChars = Math.floor(maxWidth / (avgCharWidth*2));
+	return text.length > maxChars ? text.slice(0, maxChars - 3) + "..." : text;
+}
+
 // Helper function to create more readable labels
-function createReadableLabel(node) {
+function createReadableLabel(node, width) {
 	if (!node || !node.original) return node.id;
 
 	const original = node.original;
 
 	if (node.type === "action") {
 		// For actions, show the name with simplified parameters
-		if (!original.params) return original.name;
+		if (!original.params) return truncateText(original.name, width);
 
 		// Get a brief representation of parameters (just values)
 		const paramValues = Object.values(original.params).join(",");
-		return paramValues.length > 0
-			? `${original.name}(${paramValues})`
-			: original.name;
+		const text = paramValues.length > 0
+		? `${original.name}(${paramValues})`
+		: original.name;
+		return truncateText(text, width);
 	} else if (node.type === "prop") {
 		// For propositions, show name with a simplified parameter format
 		const prefix = original.truth_value === false ? "¬" : "";
 
 		// If there are no parameters, just return the name
-		if (!original.params) return `${prefix}${original.name}`;
+		if (!original.params) return truncateText(`${prefix}${original.name}`, width);
 
 		// Get a brief representation of parameters (just values, not keys)
 		const paramValues = Object.values(original.params).join(",");
-		return paramValues.length > 0
-			? `${prefix}${original.name}(${paramValues})`
-			: `${prefix}${original.name}`;
+		const text = paramValues.length > 0
+		? `${prefix}${original.name}(${paramValues})`
+		: `${prefix}${original.name}`;
+		return truncateText(text, width);
 	}
 
 	return node.id;
@@ -293,6 +302,8 @@ export function GraphView(props) {
 		// But limit maximum dimensions to prevent extremely large graphs
 		const rawDimensions = calculateDimensions(nodes, levelInfo);
 		const width = Math.min(rawDimensions.width, 3000); // Cap width
+		const maxLevel = Math.max(...nodes.map((n) => n.level));
+		const levelSpacing = width / (maxLevel + 2); // Leave room on edges
 		const height = Math.min(rawDimensions.height, 2000); // Cap height
 
 		// SVG setup with dynamic sizing
@@ -359,17 +370,16 @@ export function GraphView(props) {
 
 		// Level visualization
 		if (levelInfo.length > 0) {
-			const maxLevel = Math.max(...levelInfo.map((l) => l.level));
-			const levelSpacing = width / (maxLevel + 2); // Leave room on edges
+			// const maxLevel = Math.max(...levelInfo.map((l) => l.level));
 
 			// Draw level backgrounds
 			g.append("g")
 				.selectAll("rect")
 				.data(levelInfo)
 				.join("rect")
-				.attr("x", (d) => (d.level + 1) * levelSpacing - levelSpacing / 2 + 10)
+				.attr("x", (d) => (d.level + 1) * levelSpacing - (levelSpacing - 10) / 2)
 				.attr("y", 30) // Start below the labels
-				.attr("width", levelSpacing - 20)
+				.attr("width", levelSpacing)
 				.attr("height", height - 60)
 				.attr("fill", (d) => (d.type === "prop" ? "#d5ece3" : "#ddd8ed"))
 				.attr("stroke", (d) => (d.type === "prop" ? "#7ec3aa" : "#9788c9"))
@@ -562,7 +572,7 @@ export function GraphView(props) {
 		// Text with significantly increased size for better visibility
 		const textElements = label
 			.append("text")
-			.text((d) => createReadableLabel(d))
+			.text((d) => createReadableLabel(d, levelSpacing))
 			.attr("font-size", "22px") // Significantly increased for better visibility
 			.attr("font-family", "Afacad Flux")
 			.attr("font-weight", "500")
@@ -576,8 +586,8 @@ export function GraphView(props) {
 		// No background rectangles as user didn't like them
 
 		// Layout calculations - improved spacing
-		const maxLevel = Math.max(...nodes.map((n) => n.level));
-		const levelSpacing = width / (maxLevel + 2); // Leave room on edges
+		// const maxLevel = Math.max(...nodes.map((n) => n.level));
+		// const levelSpacing = width / (maxLevel + 2); // Leave room on edges
 
 		// Initialize node positions based on levels with improved distribution
 		nodes.forEach((node) => {

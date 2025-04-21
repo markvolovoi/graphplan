@@ -9,7 +9,13 @@ function ActionVis(props) {
 				class="bg-yorple-100 rounded-sm px-3 py-1 m-2 cursor-pointer select-none transition-all hover:bg-yorple-200 active:bg-yorple-300 shadow-md"
 				onclick={() => setOpened(!opened())}
 			>
-				<span class="text-md block">{props.action.name}</span>
+				<span class="text-md block">
+					{props.action.name}
+					{props.action.params != null ?
+						`(${Object.entries(props.action.params)
+						.map((el) => ` ${el[0]}=${el[1]}`)
+						.join(",")})` : ""}
+				</span>
 				<Show when={opened()}>
 					<div class="block mt-2 text-sm">
 						<p class="font-medium text-center">Preconditions:</p>
@@ -40,9 +46,6 @@ function PropVis(props) {
 				<span class="text-md block">
 					{props.prop.truth_value ? "" : "¬"}
 					{props.prop.name}
-					{props.prop.params["obj"] !== undefined
-						? ` (${props.prop.params["obj"]} @ ${props.prop.params["loc"]})`
-						: ""}
 				</span>
 				<Show when={opened()}>
 					<div class="block mt-2 text-sm">

@@ -317,7 +317,13 @@ class PlanningGraph {
 	addNoOpActions(prevPropLevel, nextActionLevel) {
 		for (const prop of prevPropLevel.propositions) {
 			// Create a no-op action that preserves this proposition
-			const noOp = new Action(`no-op-${prop.name}`, null, [prop], [prop]);
+			const noOp = new Action(`no-op-${prop.truth_value ? "" : "¬"}${prop.name}(${
+				prop.params == null
+					? ""
+					: Object.entries(prop.params)
+							.map((el) => ` ${el[0]}=${el[1]}`)
+							.join(",")
+			})`, null, [prop], [prop]);
 			nextActionLevel.add(noOp);
 		}
 	}
