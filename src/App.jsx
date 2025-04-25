@@ -34,9 +34,20 @@ function App() {
 					>
 						here
 					</a>
-					. First, choose a problem set (or create your own), and then click
-					"Build Planning Graph." Then, you can see the final possible plans
-					using "Search for Plans."
+					. First, choose a problem set and then click "Build Planning Graph."
+					Then, you can see the final possible plans using "Search for Plans."
+					The source code is available{" "}
+					<a
+						href="https://github.com/markvolovoi/graphplan"
+						class="text-froggreen-500 hover:text-froggreen-700 cursor-pointer transition-all"
+					>
+						here
+					</a>
+					.
+				</p>
+				<p class="text-zinc-400 -mt-3">
+					Note: Graphplan runs in browser, and complex problems may take a while
+					to compute.
 				</p>
 				<form class="w-full">
 					<label

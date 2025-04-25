@@ -4,7 +4,7 @@ import * as d3 from "d3";
 //from gpt - makes text wrap
 function truncateText(text, maxWidth, fontSize = 22) {
 	const avgCharWidth = fontSize * 0.6; // rough average
-	const maxChars = Math.floor(maxWidth / (avgCharWidth*2));
+	const maxChars = Math.floor(maxWidth / (avgCharWidth * 2));
 	return text.length > maxChars ? text.slice(0, maxChars - 3) + "..." : text;
 }
 
@@ -19,23 +19,26 @@ function createReadableLabel(node, width) {
 		if (!original.params) return truncateText(original.name, width);
 
 		// Get a brief representation of parameters (just values)
-		const paramValues = Object.values(original.params).join(",");
-		const text = paramValues.length > 0
-		? `${original.name}(${paramValues})`
-		: original.name;
+		const paramValues = Object.values(original.params || {}).join(",");
+		const text =
+			paramValues.length > 0
+				? `${original.name}(${paramValues})`
+				: original.name;
 		return truncateText(text, width);
 	} else if (node.type === "prop") {
 		// For propositions, show name with a simplified parameter format
 		const prefix = original.truth_value === false ? "¬" : "";
 
 		// If there are no parameters, just return the name
-		if (!original.params) return truncateText(`${prefix}${original.name}`, width);
+		if (!original.params)
+			return truncateText(`${prefix}${original.name}`, width);
 
 		// Get a brief representation of parameters (just values, not keys)
-		const paramValues = Object.values(original.params).join(",");
-		const text = paramValues.length > 0
-		? `${prefix}${original.name}(${paramValues})`
-		: `${prefix}${original.name}`;
+		const paramValues = Object.values(original.params || {}).join(",");
+		const text =
+			paramValues.length > 0
+				? `${prefix}${original.name}(${paramValues})`
+				: `${prefix}${original.name}`;
 		return truncateText(text, width);
 	}
 
@@ -66,6 +69,41 @@ function calculateDimensions(nodes, levelInfo) {
 	const minHeight = Math.max(800, Math.min(maxNodesInLevel * 60 + 120, 1600));
 
 	return { width: minWidth, height: minHeight };
+}
+
+// Determine node type for advanced coloring
+function determineNodeType(node, G) {
+	if (node.type === "prop") {
+		// Check if this is an initial state proposition
+		if (
+			G.problem &&
+			G.propLevels[0].propositions.some(
+				(p) => p.toString() === node.original.toString(),
+			)
+		) {
+			return "initial";
+		}
+		// Check if this is a goal proposition
+		if (
+			G.problem &&
+			G.problem.goals &&
+			G.problem.goals.some((g) => g.toString() === node.original.toString())
+		) {
+			return "goal";
+		}
+		return "prop"; // Regular proposition
+	} else if (node.type === "action") {
+		// Check if this is a no-op action
+		if (
+			node.original &&
+			node.original.name &&
+			node.original.name.toString().startsWith("no-op")
+		) {
+			return "noop";
+		}
+		return "action"; // Regular action
+	}
+	return node.type;
 }
 
 export function GraphView(props) {
@@ -112,10 +150,11 @@ export function GraphView(props) {
 
 				lev.propositions.forEach((p) =>
 					nodes.push({
-						id: p.toString(),
+						id: `${i}_${p.toString()}`, // Add level prefix to ensure uniqueness
 						type: "prop",
 						level: i * 2,
 						original: p,
+						levelIdx: i,
 					}),
 				);
 			});
@@ -131,10 +170,11 @@ export function GraphView(props) {
 
 				lev.actions.forEach((a) =>
 					nodes.push({
-						id: a.toString(),
+						id: `${i}_${a.toString()}`, // Add level prefix to ensure uniqueness
 						type: "action",
 						level: i * 2 + 1,
 						original: a,
+						levelIdx: i,
 					}),
 				);
 			});
@@ -161,8 +201,8 @@ export function GraphView(props) {
 								})
 							) {
 								links.push({
-									source: p.toString(),
-									target: a.toString(),
+									source: `${i}_${p.toString()}`,
+									target: `${i}_${a.toString()}`,
 									type: "precondition",
 								});
 							}
@@ -187,8 +227,8 @@ export function GraphView(props) {
 							})
 						) {
 							links.push({
-								source: a.toString(),
-								target: p.toString(),
+								source: `${i}_${a.toString()}`,
+								target: `${i + 1}_${p.toString()}`,
 								type: "effect",
 							});
 						}
@@ -196,46 +236,41 @@ export function GraphView(props) {
 				});
 			});
 
-			// Optional: Add mutex links (visually different)
-			// Commented out for clarity but can be uncommented if needed
-			/*
+			// Add mutex links (optional, uncomment if needed)
 			G.propLevels.forEach((lev, i) => {
 				if (lev.mutexRelations && lev.mutexRelations.size > 0) {
 					for (const [prop, mutexProps] of lev.mutexRelations.entries()) {
-						mutexProps.forEach(mutexProp => {
+						mutexProps.forEach((mutexProp) => {
 							// Only add each mutex relation once (avoid duplicates)
 							if (prop.toString() < mutexProp.toString()) {
 								links.push({
-									source: prop.toString(),
-									target: mutexProp.toString(),
-									type: "mutex"
+									source: `${i}_${prop.toString()}`,
+									target: `${i}_${mutexProp.toString()}`,
+									type: "mutex",
 								});
 							}
 						});
 					}
 				}
 			});
-			*/
 
-			// Also comment out action mutex relations
-			/*
-				G.actionLevels.forEach((lev, i) => {
-					if (lev.mutexRelations && lev.mutexRelations.size > 0) {
-						for (const [action, mutexActions] of lev.mutexRelations.entries()) {
-							mutexActions.forEach(mutexAction => {
-								// Only add each mutex relation once (avoid duplicates)
-								if (action.toString() < mutexAction.toString()) {
-									links.push({
-										source: action.toString(),
-										target: mutexAction.toString(),
-										type: "mutex"
-									});
-								}
-							});
-						}
+			// Action mutex relations (optional, uncomment if needed)
+			G.actionLevels.forEach((lev, i) => {
+				if (lev.mutexRelations && lev.mutexRelations.size > 0) {
+					for (const [action, mutexActions] of lev.mutexRelations.entries()) {
+						mutexActions.forEach((mutexAction) => {
+							// Only add each mutex relation once (avoid duplicates)
+							if (action.toString() < mutexAction.toString()) {
+								links.push({
+									source: `${i}_${action.toString()}`,
+									target: `${i}_${mutexAction.toString()}`,
+									type: "mutex",
+								});
+							}
+						});
 					}
-				});
-				*/
+				}
+			});
 		} else {
 			// --- PLAN visualization ---
 			const P = props.plan;
@@ -253,10 +288,11 @@ export function GraphView(props) {
 			Object.entries(byStep).forEach(([t, acts]) => {
 				acts.forEach((a) =>
 					nodes.push({
-						id: a.toString(),
+						id: `${t}_${a.toString()}`, // Add time step to ensure uniqueness
 						type: "action",
 						level: Number(t),
 						original: a,
+						levelIdx: Number(t),
 					}),
 				);
 			});
@@ -272,8 +308,8 @@ export function GraphView(props) {
 				a1.forEach((x) =>
 					a2.forEach((y) =>
 						links.push({
-							source: x.toString(),
-							target: y.toString(),
+							source: `${steps[i]}_${x.toString()}`,
+							target: `${steps[i + 1]}_${y.toString()}`,
 							type: "sequence",
 						}),
 					),
@@ -343,14 +379,21 @@ export function GraphView(props) {
 			d3.zoomIdentity.translate(translateX, translateY).scale(initialScale),
 		);
 
-		// Arrow markers for links
+		// Arrow markers for links with different colors
+		const arrowTypes = [
+			{ type: "precondition", color: "#999" },
+			{ type: "effect", color: "#555" },
+			{ type: "sequence", color: "#555" },
+			{ type: "mutex", color: "#e53e3e" },
+		];
+
 		svg
 			.append("defs")
 			.selectAll("marker")
-			.data(["precondition", "effect", "sequence"])
+			.data(arrowTypes)
 			.enter()
 			.append("marker")
-			.attr("id", (d) => `arrow-${d}`)
+			.attr("id", (d) => `arrow-${d.type}`)
 			.attr("viewBox", "0 -5 10 10")
 			.attr("refX", 15)
 			.attr("refY", 0)
@@ -359,25 +402,29 @@ export function GraphView(props) {
 			.attr("orient", "auto")
 			.append("path")
 			.attr("d", "M0,-5L10,0L0,5")
-			.attr("fill", (d) => (d === "precondition" ? "#999" : "#555"));
+			.attr("fill", (d) => d.color);
 
-		// Color scheme
+		// Enhanced color scheme
 		const nodeColors = {
-			prop: "#3d8369",
-			action: "#584597",
-			selected: "#000000",
+			prop: "#3d8369", // Regular proposition
+			initial: "#006837", // Initial state proposition (darker green)
+			goal: "#c83232", // Goal proposition (red)
+			action: "#584597", // Regular action
+			noop: "#9788c9", // No-op action (lighter purple)
+			selected: "#000000", // Selected node
 		};
 
 		// Level visualization
 		if (levelInfo.length > 0) {
-			// const maxLevel = Math.max(...levelInfo.map((l) => l.level));
-
 			// Draw level backgrounds
 			g.append("g")
 				.selectAll("rect")
 				.data(levelInfo)
 				.join("rect")
-				.attr("x", (d) => (d.level + 1) * levelSpacing - (levelSpacing - 10) / 2)
+				.attr(
+					"x",
+					(d) => (d.level + 1) * levelSpacing - (levelSpacing - 10) / 2,
+				)
 				.attr("y", 30) // Start below the labels
 				.attr("width", levelSpacing)
 				.attr("height", height - 60)
@@ -403,13 +450,26 @@ export function GraphView(props) {
 				.text((d) => d.label);
 		}
 
-		// Create links
+		// Create links before nodes so nodes appear on top
 		const link = g
 			.append("g")
 			.selectAll("line")
 			.data(links)
 			.join("line")
-			.attr("stroke", (d) => (d.type === "mutex" ? "#e53e3e" : "#999"))
+			.attr("stroke", (d) => {
+				switch (d.type) {
+					case "mutex":
+						return "#e53e3e";
+					case "precondition":
+						return "#999";
+					case "effect":
+						return "#555";
+					case "sequence":
+						return "#555";
+					default:
+						return "#999";
+				}
+			})
 			.attr("stroke-opacity", (d) => (d.type === "mutex" ? 0.4 : 0.6))
 			.attr("stroke-width", (d) => (d.type === "mutex" ? 1 : 1.5))
 			.attr("stroke-dasharray", (d) => (d.type === "mutex" ? "3,3" : null))
@@ -417,14 +477,35 @@ export function GraphView(props) {
 				d.type !== "mutex" ? `url(#arrow-${d.type})` : null,
 			);
 
-		// Create nodes with increased size
+		// Create nodes with improved coloring
 		const node = g
 			.append("g")
 			.selectAll("circle")
 			.data(nodes)
 			.join("circle")
-			.attr("r", (d) => (d.type === "action" ? 10 : 8)) // Increased node size
-			.attr("fill", (d) => nodeColors[d.type])
+			.attr("r", (d) => {
+				// Larger radius for important nodes
+				if (
+					d.type === "prop" &&
+					props.graph?.problem?.goals?.some(
+						(g) => g.toString() === d.original.toString(),
+					)
+				) {
+					return 12; // Goal nodes
+				}
+				if (d.type === "prop" && d.levelIdx === 0) {
+					return 10; // Initial state nodes
+				}
+				return d.type === "action" ? 10 : 8; // Regular nodes
+			})
+			.attr("fill", (d) => {
+				// Get the specific node type for coloring
+				if (props.graph) {
+					const nodeType = determineNodeType(d, props.graph);
+					return nodeColors[nodeType];
+				}
+				return nodeColors[d.type];
+			})
 			.attr("stroke", "#fff")
 			.attr("stroke-width", 2) // Slightly thicker stroke
 			.call(
@@ -478,36 +559,39 @@ export function GraphView(props) {
 				y = Math.max(10, y);
 
 				// Show the tooltip with full node information
-				setTooltipContent(d.id);
+				setTooltipContent(d.original.toString()); // Use original node toString
 				setTooltipPosition({ x, y });
 				setTooltipVisible(true);
 
 				// Highlight connected elements
-				link.attr("stroke-opacity", (l) =>
-					l.source.id === d.id || l.target.id === d.id ? 1 : 0.1,
-				);
+				link.attr("stroke-opacity", (l) => {
+					// Check if this link connects to the current node
+					return l.source === d.id || l.target === d.id ? 1 : 0.1;
+				});
 
-				node.attr("opacity", (n) =>
-					n.id === d.id ||
-					links.some(
-						(l) =>
-							(l.source.id === d.id && l.target.id === n.id) ||
-							(l.source.id === n.id && l.target.id === d.id),
-					)
+				node.attr("opacity", (n) => {
+					// Check if this node is the current node or connected via any link
+					return n.id === d.id ||
+						links.some(
+							(l) =>
+								(l.source === d.id && l.target === n.id) ||
+								(l.source === n.id && l.target === d.id),
+						)
 						? 1
-						: 0.4,
-				);
+						: 0.4;
+				});
 
-				label.attr("opacity", (n) =>
-					n.id === d.id ||
-					links.some(
-						(l) =>
-							(l.source.id === d.id && l.target.id === n.id) ||
-							(l.source.id === n.id && l.target.id === d.id),
-					)
+				label.attr("opacity", (n) => {
+					// Match same logic as node opacity
+					return n.id === d.id ||
+						links.some(
+							(l) =>
+								(l.source === d.id && l.target === n.id) ||
+								(l.source === n.id && l.target === d.id),
+						)
 						? 1
-						: 0.4,
-				);
+						: 0.4;
+				});
 			})
 			.on("mousemove", function (event) {
 				// Update tooltip position when mouse moves
@@ -541,7 +625,21 @@ export function GraphView(props) {
 			})
 			.on("mouseout", function () {
 				d3.select(this)
-					.attr("r", (d) => (d.type === "action" ? 10 : 8)) // Restore to new larger default size
+					.attr("r", (d) => {
+						// Return to original radius
+						if (
+							d.type === "prop" &&
+							props.graph?.problem?.goals?.some(
+								(g) => g.toString() === d.original.toString(),
+							)
+						) {
+							return 12; // Goal nodes
+						}
+						if (d.type === "prop" && d.levelIdx === 0) {
+							return 10; // Initial state nodes
+						}
+						return d.type === "action" ? 10 : 8; // Regular nodes
+					})
 					.attr("stroke", "#fff");
 
 				// Hide tooltip
@@ -561,14 +659,6 @@ export function GraphView(props) {
 			.join("g")
 			.attr("pointer-events", "none");
 
-		// Optional text background for better readability
-		label
-			.append("rect")
-			.attr("fill", "white")
-			.attr("opacity", 0.7)
-			.attr("rx", 3)
-			.attr("ry", 3);
-
 		// Text with significantly increased size for better visibility
 		const textElements = label
 			.append("text")
@@ -582,12 +672,6 @@ export function GraphView(props) {
 			.attr("stroke", "#ffffff") // Add white outline for better readability
 			.attr("stroke-width", "0.7px") // Slightly thicker for larger text
 			.attr("paint-order", "stroke"); // Draw stroke behind text
-
-		// No background rectangles as user didn't like them
-
-		// Layout calculations - improved spacing
-		// const maxLevel = Math.max(...nodes.map((n) => n.level));
-		// const levelSpacing = width / (maxLevel + 2); // Leave room on edges
 
 		// Initialize node positions based on levels with improved distribution
 		nodes.forEach((node) => {
@@ -606,6 +690,23 @@ export function GraphView(props) {
 				node.y = (height - levelHeight) / 2 + nodeIndexInLevel * gap;
 			} else {
 				node.y = height / 2;
+			}
+		});
+
+		// Create Map objects for D3 force simulation
+		const nodeMap = {};
+		nodes.forEach((node) => {
+			nodeMap[node.id] = node;
+		});
+
+		// Process links to ensure they reference actual node objects
+		links.forEach((link) => {
+			// Convert string IDs to references to the node objects
+			if (typeof link.source === "string") {
+				link.source = nodeMap[link.source];
+			}
+			if (typeof link.target === "string") {
+				link.target = nodeMap[link.target];
 			}
 		});
 
@@ -692,24 +793,40 @@ export function GraphView(props) {
 				{tooltipContent()}
 			</div>
 
-			{/* Legend */}
+			{/* Enhanced Legend */}
 			<div style="position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.9); padding: 8px; border-radius: 5px; font-size: 12px; box-shadow: 0 0 5px rgba(0,0,0,0.1);">
 				<div style="font-weight: bold; margin-bottom: 5px;">Legend</div>
 				<div style="display: flex; align-items: center; margin-bottom: 4px;">
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #006837; margin-right: 6px;"></div>
+					<span>Initial Proposition</span>
+				</div>
+				<div style="display: flex; align-items: center; margin-bottom: 4px;">
 					<div style="width: 12px; height: 12px; border-radius: 50%; background: #3d8369; margin-right: 6px;"></div>
 					<span>Proposition</span>
+				</div>
+				<div style="display: flex; align-items: center; margin-bottom: 4px;">
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #c83232; margin-right: 6px;"></div>
+					<span>Goal Proposition</span>
 				</div>
 				<div style="display: flex; align-items: center; margin-bottom: 4px;">
 					<div style="width: 12px; height: 12px; border-radius: 50%; background: #584597; margin-right: 6px;"></div>
 					<span>Action</span>
 				</div>
 				<div style="display: flex; align-items: center; margin-bottom: 4px;">
+					<div style="width: 12px; height: 12px; border-radius: 50%; background: #9788c9; margin-right: 6px;"></div>
+					<span>No-op Action</span>
+				</div>
+				<div style="display: flex; align-items: center; margin-bottom: 4px;">
 					<div style="width: 20px; height: 2px; background: #999; margin-right: 6px;"></div>
 					<span>Precondition</span>
 				</div>
-				<div style="display: flex; align-items: center;">
+				<div style="display: flex; align-items: center; margin-bottom: 4px;">
 					<div style="width: 20px; height: 2px; background: #555; margin-right: 6px;"></div>
 					<span>Effect</span>
+				</div>
+				<div style="display: flex; align-items: center;">
+					<div style="width: 20px; height: 2px; background: #e53e3e; stroke-dasharray: 3,3; margin-right: 6px;"></div>
+					<span>Mutex</span>
 				</div>
 			</div>
 		</div>
